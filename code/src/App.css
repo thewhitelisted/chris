@@ -315,6 +315,10 @@ body {
     justify-content: center;
   }
   
+  .social-link-inner {
+    justify-content: center;
+  }
+  
   .footer {
     flex-direction: column;
     gap: 0.5rem;
