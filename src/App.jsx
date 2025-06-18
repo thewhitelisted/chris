@@ -171,15 +171,13 @@ function App() {  const socialLinks = [
             viewport={{ once: true }}
           >
             <p>
-              I'm currently pursuing a combined Math/BBA degree at the University of Waterloo 
-              and Wilfrid Laurier University. My passion lies in building things that matter - 
-              whether it's developing software solutions, creating mathematical models, or 
-              exploring new technologies.
+              i'm christopher, a student studying math and business at uwaterloo and wilfrid laurier university.
+              some of my interests include building weather and risk models, coding productivity utilities for myself,
+              and quantitative finance.
             </p>
             <p>
-              When I'm not studying or coding, you can find me working on personal projects, 
-              learning about emerging tech trends, or just enjoying life as a chill guy who 
-              happens to love problem-solving.
+              i'm always looking to learn new things and take on interesting projects. feel free to reach out if you
+              want to chat or collaborate!
             </p>
           </motion.div>
         </div>
