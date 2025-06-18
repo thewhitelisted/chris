@@ -17,7 +17,7 @@ function BlogPost() {
         setLoading(true)
         // Try multiple possible paths for compatibility
         const possiblePaths = [
-          `/website/posts/${slug}.md`,
+          `/chris/posts/${slug}.md`,
           `/posts/${slug}.md`,
           `./posts/${slug}.md`
         ]
