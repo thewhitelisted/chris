@@ -6,6 +6,6 @@ export default defineConfig({
   plugins: [react()],
   base: '/chris/', // Replace 'website' with your actual GitHub repository name
   build: {
-    outDir: 'dist',
+    outDir: '..',
   },
 })
