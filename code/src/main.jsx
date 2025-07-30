@@ -8,7 +8,7 @@ import BlogPost from './BlogPost.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Router basename="/chris">
+    <Router basename="/">
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/blog" element={<Blog />} />

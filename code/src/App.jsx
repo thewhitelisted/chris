@@ -5,7 +5,7 @@ import './App.css'
 
 function App() {  const socialLinks = [
     { name: 'blog', icon: BookOpen, href: '/blog', color: 'text-green-600' },
-    { name: 'resume', icon: Briefcase, href: '/chris/2025-christopher_lee.pdf', color: 'text-purple-600' },
+    { name: 'resume', icon: Briefcase, href: '/2025-christopher_lee.pdf', color: 'text-purple-600' },
     { name: 'github', icon: Github, href: 'https://github.com/thewhitelisted', color: 'text-blue-600' },
     { name: 'linkedin', icon: Linkedin, href: 'https://www.linkedin.com/in/christopherjlee2006/', color: 'text-blue-700' },
     { name: 'email', icon: Mail, href: 'mailto:jleechris06@gmail.com', color: 'text-red-500' },
