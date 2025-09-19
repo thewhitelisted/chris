@@ -222,6 +222,12 @@ body {
   align-items: center;
   justify-content: center;
   padding: 4rem 2rem;
+  position: relative;
+}
+
+/* Position the projects arrow higher within the About section */
+.about-section .scroll-prompt {
+  bottom: 5rem;
 }
 
 .about-content {
@@ -254,6 +260,99 @@ body {
 
 .about-text p:last-child {
   margin-bottom: 0;
+}
+
+/* Section Scroll spacer under sections (uses same arrow style) */
+/* removed custom section-scroll; using .scroll-prompt for consistency */
+
+/* Projects Section */
+.projects-section {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+}
+
+.projects-content {
+  max-width: 1000px;
+  width: 100%;
+  text-align: center;
+}
+
+.projects-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 2rem;
+  color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.project-card {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.project-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.project-title {
+  font-size: 1.1rem;
+  color: #ffffff;
+  text-transform: lowercase;
+}
+
+.project-desc {
+  color: #d1d5db;
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.project-links {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.project-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  text-decoration: none;
+  color: #93c5fd;
+  background: rgba(40, 40, 40, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.project-link:hover {
+  color: #bfdbfe;
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Responsive Design */
@@ -293,6 +392,15 @@ body {
   .about-section {
     padding: 3rem 1rem;
   }
+
+  .projects-title {
+    font-size: 2rem;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -330,6 +438,10 @@ body {
   
   .scroll-button {
     font-size: 0.8rem;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Github, Linkedin, Mail, BookOpen, Briefcase, X, ChevronDown } from 'lucide-react'
+import { Github, Linkedin, Mail, BookOpen, Briefcase, X, ChevronDown, ExternalLink } from 'lucide-react'
+import fivReport from './FIV.pdf'
 import './App.css'
 
 function App() {  const socialLinks = [
@@ -12,9 +13,60 @@ function App() {  const socialLinks = [
     { name: 'twitter/x', icon: X, href: 'https://x.com/_chrislee06', color: 'text-black' }
   ]
 
+  const projects = [
+    {
+      title: 'financial viscosity model',
+      description: 'In the span of a week I sought to create a model of market risk using spring differential equations as the basis. Posting my research on social media netted me over 25000 views.',
+      links: {
+        report: fivReport
+      }
+    },
+    {
+      title: 'agent-based market simulation tool',
+      description: 'I created software that functionally models a CLOB and agents that can trade on it. Furthermore, you can design your own agents that emulate desired behaviour.',
+      links: {
+        github: 'https://github.com/thewhitelisted/Agent-Based-Market-Simulator'
+      }
+    },
+    {
+      title: 'sentivest',
+      description: 'Created a tool that performs sentiment analysis on a set of stocks, and subsequently optimizes portfolio weighings based on sentiment using the black-litterman model',
+      links: {
+        github: 'https://github.com/thewhitelisted/Sentivest'
+      }
+    },
+    {
+      title: 'git clone in rust',
+      description: 'Wrote version control software in rust. Has trivial features and mimicks the backbones of git.',
+      links: {
+        github: 'https://github.com/thewhitelisted/hit'
+      }
+    },
+    {
+      title: 'trivial toronto weather model',
+      description: 'Made a ridge regression model of the temperature high/low in toronto on any given day. Model has a mean error of around 2-2.5 degrees.',
+      links: {
+        github: 'https://github.com/thewhitelisted/weather-model'
+      }
+    },
+    {
+      title: 'discord js bot',
+      description: 'Created a discord bot for a server with 1000+ members. Aided administrators in verification and provided trivial functions for members to have fun.',
+      links: {
+        github: 'https://github.com/thewhitelisted/cutie-bot'
+      }
+    }
+  ]
+
   const scrollToAbout = () => {
     document.getElementById('about-section').scrollIntoView({ 
       behavior: 'smooth' 
+    })
+  }
+
+  const scrollToProjects = () => {
+    document.getElementById('projects-section').scrollIntoView({
+      behavior: 'smooth'
     })
   }
 
@@ -112,7 +164,7 @@ function App() {  const socialLinks = [
           className="description"
           variants={itemVariants}
         >
-          Just a chill guy who likes to build and model things.
+          stats, ml, finance, etc. see below for about me + projects
         </motion.p>
 
         {/* Scroll for More Button */}
@@ -179,6 +231,109 @@ function App() {  const socialLinks = [
               i'm always looking to learn new things and take on interesting projects. feel free to reach out if you
               want to chat or collaborate!
             </p>
+          </motion.div>
+        </div>
+        {/* Scroll to Projects Button (same arrow format as top) */}
+        <div className="scroll-prompt">
+          <motion.button
+            onClick={scrollToProjects}
+            className="scroll-button"
+            whileHover={{ 
+              scale: 1.05,
+              transition: { duration: 0.2 }
+            }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <span>projects</span>
+            <motion.div
+              animate={{ y: [0, 8, 0] }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              <ChevronDown size={20} />
+            </motion.div>
+          </motion.button>
+        </div>
+      </motion.section>
+
+      {/* Projects Section */}
+      <motion.section
+        id="projects-section"
+        className="projects-section"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
+        <div className="projects-content">
+          <motion.h2
+            className="projects-title"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
+            projects
+          </motion.h2>
+
+          <motion.div
+            className="projects-grid"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true }}
+          >
+            {projects.map((project) => (
+              <div key={project.title} className="project-card">
+                <div className="project-card-header">
+                  <h3 className="project-title">{project.title}</h3>
+                </div>
+                <p className="project-desc">{project.description}</p>
+                {project.links?.report ? (
+                  <div className="project-links">
+                    <a
+                      href={project.links.report}
+                      className="project-link"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink size={16} />
+                      report
+                    </a>
+                  </div>
+                ) : (
+                  (project.links?.site || project.links?.github) && (
+                    <div className="project-links">
+                      {project.links?.site && (
+                        <a
+                          href={project.links.site}
+                          className="project-link"
+                          target={project.links.site.startsWith('http') ? '_blank' : undefined}
+                          rel={project.links.site.startsWith('http') ? 'noopener noreferrer' : undefined}
+                        >
+                          <ExternalLink size={16} />
+                          site
+                        </a>
+                      )}
+                      {project.links?.github && (
+                        <a
+                          href={project.links.github}
+                          className="project-link"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Github size={16} />
+                          code
+                        </a>
+                      )}
+                    </div>
+                  )
+                )}
+              </div>
+            ))}
           </motion.div>
         </div>
       </motion.section>
