@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Github, Linkedin, Mail, BookOpen, Briefcase, X, ChevronDown, ExternalLink } from 'lucide-react'
 import fivReport from './FIV.pdf'
@@ -57,6 +58,19 @@ function App() {  const socialLinks = [
       }
     }
   ]
+
+  // Ensure page loads at the top and browser doesn't restore prior scroll
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+    window.scrollTo(0, 0)
+    return () => {
+      if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'auto'
+      }
+    }
+  }, [])
 
   const scrollToAbout = () => {
     document.getElementById('about-section').scrollIntoView({ 
