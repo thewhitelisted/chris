@@ -2,12 +2,14 @@
 
 I've never been all that interested in web development, let alone actually working with react and different frameworks like that.
 
+However, after spending some time developing a web utility for me to use as a catch-all todo app (https://justletitout.vercel.app/) I realized it wasn't so scary.
+
 ## the idea
 
 The idea was simple: create a minimalistic website that would allow me to contain everything that I had in my previous website, only better.
 
 A few of my inspirations came from the following people:
-1. Hanz Nathan Po (https://www.hanzpo.com/)
+1. Hanz Nathan "The Goat" Po (https://www.hanzpo.com/)
 2. Anthony Zhang (https://anthony-zhang.me/)
 3. Fernando Borreti (https://borretti.me/)
 
