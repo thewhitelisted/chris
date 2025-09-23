@@ -1,26 +1,25 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import './BlogPost.css'
 
-function BlogPost() {
-  const { slug } = useParams()
+function Music() {
   const [markdownContent, setMarkdownContent] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [pageHtmls, setPageHtmls] = useState([])
   const sourceRef = useRef(null)
+
   useEffect(() => {
     const loadMarkdown = async () => {
       try {
         setLoading(true)
         // Try multiple possible paths for compatibility
         const possiblePaths = [
-          `/posts/${slug}.md`,
-          `./posts/${slug}.md`,
-          `/chris/posts/${slug}.md`
+          `/music.md`,
+          `./music.md`,
+          `/chris/music.md`
         ]
         
         let content = null
@@ -39,7 +38,7 @@ function BlogPost() {
         }
         
         if (!content) {
-          throw new Error(`Post not found: ${slug}`)
+          throw new Error(`Music content not found`)
         }
         
         setMarkdownContent(content)
@@ -50,38 +49,10 @@ function BlogPost() {
       }
     }
 
-    if (slug) {
-      loadMarkdown()
-    }
-  }, [slug])
+    loadMarkdown()
+  }, [])
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.8,
-        staggerChildren: 0.1
-      }
-    }
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6 }
-    }
-  }
-
-  // Note: do not early-return before hooks; render checks will be below after hooks
-
-  // paginate into letter-sized pages after content loads
-  // Build pages once hidden markdown has rendered
-
-  // Render hidden source for measuring and build pages whenever content or layout changes
+  // Paginate into letter-sized pages after content loads
   useEffect(() => {
     let rafId = 0
     const buildPages = () => {
@@ -91,6 +62,7 @@ function BlogPost() {
         rafId = requestAnimationFrame(buildPages)
         return
       }
+      
       // Calculate based on current page width using Letter ratio (11/8.5), then subtract vertical padding (60+60)
       const pagesContainer = document.querySelector('.pages')
       const pageOuterWidth = pagesContainer?.clientWidth || 720
@@ -104,6 +76,7 @@ function BlogPost() {
       scratch.style.visibility = 'hidden'
       scratch.style.width = `${(pageOuterWidth - 120)}px`
       document.body.appendChild(scratch)
+      
       const children = Array.from(source.children)
       children.forEach((node) => {
         // Special handling for unordered lists only - keep ordered lists together
@@ -159,6 +132,7 @@ function BlogPost() {
       const nonEmptyPages = pages.filter(html => html && html.trim() !== '')
       setPageHtmls(nonEmptyPages)
     }
+    
     rafId = requestAnimationFrame(buildPages)
     const onResize = () => {
       setPageHtmls([])
@@ -179,7 +153,7 @@ function BlogPost() {
     return (
       <div className="blog-post-content">
         <div className="error">
-          <h1>Post Not Found</h1>
+          <h1>Content Not Found</h1>
           <p>{error}</p>
         </div>
       </div>
@@ -216,16 +190,16 @@ function BlogPost() {
         {pageHtmls.length > 0 ? (
           pageHtmls.map((html, idx) => (
             <motion.div key={idx} className="paper-page" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: idx * 0.05 }}>
-              <motion.article className="markdown-content" variants={itemVariants} dangerouslySetInnerHTML={{__html: html}} />
+              <motion.article className="markdown-content" dangerouslySetInnerHTML={{__html: html}} />
             </motion.div>
           ))
         ) : (
           <motion.div className="paper-page" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <motion.article className="markdown-content" variants={itemVariants}>
+            <motion.article className="markdown-content">
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  h1: ({children}) => <h1 className="post-title">re: {children}</h1>,
+                  h1: ({children}) => <h1 className="post-title">music: {children}</h1>,
                   h2: ({children}) => <h2 className="post-heading">--- {children}</h2>,
                   h3: ({children}) => <h3 className="post-subheading">--- --- {children}</h3>,
                   p: ({children}) => <p className="post-paragraph">{children}</p>,
@@ -250,4 +224,4 @@ function BlogPost() {
   )
 }
 
-export default BlogPost
+export default Music

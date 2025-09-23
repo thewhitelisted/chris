@@ -6,9 +6,9 @@
 }
 
 body {
-  font-family: 'Georgia', 'Times New Roman', serif;
-  background-color: #0f0f0f;
-  color: #e5e5e5;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+  background-color: #f6ecd6; /* parchment */
+  color: #2b2b2b;
   line-height: 1.6;
   overflow-x: hidden;
 }
@@ -17,7 +17,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+  background: transparent;
 }
 
 .portfolio-content {
@@ -35,12 +35,11 @@ body {
 
 /* Name */
 .name {
-  font-size: 3rem;
-  font-weight: bold;
-  letter-spacing: 1px;
-  margin-bottom: 2rem;
-  color: #ffffff;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 1rem;
+  color: #2b2b2b;
 }
 
 /* Social Navigation */
@@ -62,11 +61,10 @@ body {
   font-weight: 500;
   font-size: 0.9rem;
   letter-spacing: 0.2px;
-  border-radius: 6px;
+  border-radius: 20px;
   transition: all 0.3s ease;
-  background: rgba(30, 30, 30, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   position: relative;
   overflow: hidden;
 }
@@ -97,10 +95,10 @@ body {
 }
 
 .social-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-  border-color: currentColor;
-  background: rgba(40, 40, 40, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0,0,0,0.12);
+  background: rgba(0,0,0,0.06);
 }
 
 .social-icon {
@@ -121,19 +119,19 @@ body {
 .text-blue-500 { color: #60a5fa; }
 .text-blue-400 { color: #93c5fd; }
 .text-gray-700 { color: #d1d5db; }
-.text-black { color: #ffffff; }
+.text-black { color: #2b2b2b; }
 
 /* Company Info */
 .company-info {
-  font-size: 1.1rem;
-  margin-bottom: 1.5rem;
-  color: #d1d5db;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: #6a655c;
 }
 
 .degree {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   margin-right: 0.5rem;
-  color: #d1d5db;
+  color: #6a655c;
 }
 
 .university {
@@ -153,10 +151,10 @@ body {
 
 /* Description */
 .description {
-  font-size: 1.1rem;
-  line-height: 1.8;
-  margin-bottom: 3rem;
-  color: #d1d5db;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  color: #3c3a35;
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
@@ -297,8 +295,8 @@ body {
 }
 
 .project-card {
-  background: rgba(30, 30, 30, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   padding: 1rem;
   text-align: left;
@@ -342,9 +340,9 @@ body {
   gap: 0.35rem;
   padding: 0.35rem 0.6rem;
   text-decoration: none;
-  color: #93c5fd;
-  background: rgba(40, 40, 40, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #2563eb;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 6px;
   transition: all 0.2s ease;
 }
@@ -460,3 +458,60 @@ body {
 .fade-in-up {
   animation: fadeInUp 0.6s ease-out forwards;
 }
+
+/* Letter styles */
+.letter { font-size: 15px; font-family: 'Times New Roman', Times, serif; color: #222; line-height: 1.75; }
+.letter * { font-family: inherit; font-size: inherit; }
+
+.letter-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 15px;
+}
+
+.letter-meta {
+  text-align: left;
+}
+.letter-meta, .letter-meta * {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.75;
+  color: #222;
+  letter-spacing: 0;
+  font-style: normal;
+  text-transform: none;
+  font-variant-numeric: lining-nums; /* normalize number glyphs for the date */
+}
+.letter-meta .meta-name { font-weight: 600; }
+.letter-meta .meta-date { font-weight: 600; }
+.letter-meta > div { margin: 2px 0; }
+
+.meta-name {
+  font-weight: 600;
+}
+
+.meta-location,
+.meta-date { color: inherit; opacity: 1; }
+
+.letter-body { margin-top: 20px; font-size: inherit; color: inherit; }
+
+.letter-body p { margin: 14px 0; color: inherit; opacity: 1; }
+
+.from { font-size: inherit; color: inherit; margin-bottom: 14px; }
+
+.email { color: inherit; text-decoration: underline; }
+
+/* Redaction bars */
+.redaction {
+  display: inline-block;
+  background: #000;
+  color: transparent;
+  width: 50px;
+  height: 15px;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.redaction-long { width: 220px; height: 15px; border-radius: 2px; margin-left: 0; display: inline-block; }

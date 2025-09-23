@@ -4,9 +4,7 @@ If you know me, you know that I have a pretty funky case of ADHD. I'm the type o
 
 With all that being said, here is how I manage being an attention deficit second year managing double degree.
 
-## drugs.
-
-ADHD meds work.
+## drugs
 
 ADHD is a brain chemistry issue so naturally meds are the first line of defence. I remember taking my meds for the first time in grade 12 and studying for 6 hours straight without a break. It felt so cool to finally get stuff done. 
 

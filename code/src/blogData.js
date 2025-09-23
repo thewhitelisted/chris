@@ -6,12 +6,6 @@ export const blogPosts = [
     description: "handing adhd as a double degree student pursing quant finance",
     slug: "handling-adhd"
   },
-  {
-    title: "creating my new website",
-    date: "17 June, 2025",
-    description: "how i built my new personal website.",
-    slug: "new-website"
-  },
 ]
 
 // Function to load markdown content
