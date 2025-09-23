@@ -296,32 +296,52 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .projects-window {
-    margin-top: 1rem;
+    margin-top: 0.5rem;
+    width: 100%;
+    max-width: 100%;
   }
   
   .list-header {
-    grid-template-columns: 1fr 100px 80px;
+    grid-template-columns: 1fr 100px 100px;
+    padding: 0 4px;
+    font-size: 11px;
   }
   
   .row {
-    grid-template-columns: 1fr 100px 80px;
+    grid-template-columns: 1fr 100px 100px;
+    height: 40px;
+    padding: 0 4px;
+    font-size: 12px;
   }
   
+  .row .col.date { width: 100px; }
+  .row .col.type { width: 100px; }
+  
   .sticky-note {
-    width: 280px;
+    width: calc(100vw - 40px);
+    max-width: 320px;
     min-height: 350px;
   }
   
   .search-wrap {
-    width: 200px;
+    width: 180px;
+  }
+  
+  .toolbar {
+    padding: 4px 8px;
   }
 }
 
 @media (max-width: 480px) {
+  .projects-window {
+    border-radius: 8px;
+    margin-top: 0.25rem;
+  }
+  
   .toolbar {
     flex-direction: column;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 8px;
   }
   
   .search-wrap {
@@ -329,18 +349,55 @@
   }
   
   .list-header {
-    grid-template-columns: 1fr 80px 60px;
-    font-size: 11px;
+    grid-template-columns: 1fr 70px 80px;
+    font-size: 10px;
+    height: 28px;
+    padding: 0 2px;
   }
   
   .row {
-    grid-template-columns: 1fr 80px 60px;
-    height: 40px;
+    grid-template-columns: 1fr 70px 80px;
+    height: 36px;
+    font-size: 11px;
+    padding: 0 2px;
+  }
+  
+  .row .col.date { width: 70px; font-size: 10px; }
+  .row .col.type { width: 80px; font-size: 10px; }
+  
+  .file-name { font-size: 11px; }
+  .file-icon { width: 14px; height: 14px; }
+  
+  .type-badge {
+    padding: 1px 6px;
+    font-size: 9px;
   }
   
   .sticky-note {
-    width: 260px;
-    min-height: 320px;
+    width: calc(100vw - 20px);
+    max-width: 280px;
+    min-height: 300px;
+    position: fixed;
+    left: 10px;
+    top: 10px;
+  }
+  
+  .sticky-note-content {
+    padding: 0 12px 12px 12px;
+    gap: 8px;
+  }
+  
+  .sticky-note-title {
+    font-size: 16px;
+  }
+  
+  .sticky-note-description {
+    font-size: 13px;
+  }
+  
+  .tech-tag {
+    font-size: 10px;
+    padding: 3px 6px;
   }
 }
 
