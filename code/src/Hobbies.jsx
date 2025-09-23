@@ -17,9 +17,10 @@ function Hobbies() {
         setLoading(true)
         // Try multiple possible paths for compatibility
         const possiblePaths = [
+          `/papers/hobbies.md`,
+          `./papers/hobbies.md`,
           `/hobbies.md`,
-          `./hobbies.md`,
-          `/chris/hobbies.md`
+          `./hobbies.md`
         ]
         
         let content = null
@@ -38,7 +39,7 @@ function Hobbies() {
         }
         
         if (!content) {
-          throw new Error(`Hobbies content not found`)
+          throw new Error(`Hobbies content not found in papers/ directory`)
         }
         
         setMarkdownContent(content)
@@ -170,7 +171,7 @@ function Hobbies() {
             <div className="error" style={{padding: '2rem'}}>
               <h1 className="post-title">hobbies: Content Not Found</h1>
               <p className="post-paragraph">{error}</p>
-              <p className="post-paragraph">Please check that the hobbies.md file is available in the public directory.</p>
+              <p className="post-paragraph">Please check that the hobbies.md file is available in the public/papers/ directory.</p>
             </div>
           </div>
         </div>

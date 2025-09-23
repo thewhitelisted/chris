@@ -17,9 +17,10 @@ function About() {
         setLoading(true)
         // Try multiple possible paths for compatibility
         const possiblePaths = [
+          `/papers/about.md`,
+          `./papers/about.md`,
           `/about.md`,
-          `./about.md`,
-          `/chris/about.md`
+          `./about.md`
         ]
         
         let content = null
@@ -38,7 +39,7 @@ function About() {
         }
         
         if (!content) {
-          throw new Error(`About content not found`)
+          throw new Error(`About content not found in papers/ directory`)
         }
         
         setMarkdownContent(content)
@@ -172,7 +173,7 @@ function About() {
             <div className="error" style={{padding: '2rem'}}>
               <h1 className="post-title">about: Content Not Found</h1>
               <p className="post-paragraph">{error}</p>
-              <p className="post-paragraph">Please check that the about.md file is available in the public directory.</p>
+              <p className="post-paragraph">Please check that the about.md file is available in the public/papers/ directory.</p>
             </div>
           </div>
         </div>

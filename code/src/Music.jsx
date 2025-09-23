@@ -17,9 +17,10 @@ function Music() {
         setLoading(true)
         // Try multiple possible paths for compatibility
         const possiblePaths = [
+          `/papers/music.md`,
+          `./papers/music.md`,
           `/music.md`,
-          `./music.md`,
-          `/chris/music.md`
+          `./music.md`
         ]
         
         let content = null
@@ -38,7 +39,7 @@ function Music() {
         }
         
         if (!content) {
-          throw new Error(`Music content not found`)
+          throw new Error(`Music content not found in papers/ directory`)
         }
         
         setMarkdownContent(content)
@@ -170,7 +171,7 @@ function Music() {
             <div className="error" style={{padding: '2rem'}}>
               <h1 className="post-title">music: Content Not Found</h1>
               <p className="post-paragraph">{error}</p>
-              <p className="post-paragraph">Please check that the music.md file is available in the public directory.</p>
+              <p className="post-paragraph">Please check that the music.md file is available in the public/papers/ directory.</p>
             </div>
           </div>
         </div>
