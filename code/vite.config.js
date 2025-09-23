@@ -8,12 +8,12 @@ const handleMarkdownFiles = () => {
   return {
     name: 'handle-markdown-files',
     closeBundle() {
-      // After build, remove markdown files from root to prevent GitHub Pages conflicts
+      // After build, remove only root-level markdown files to prevent GitHub Pages conflicts
+      // Keep papers/ directory intact for the React app to access
       const outDir = '..'
       const markdownFiles = ['about.md', 'music.md', 'hobbies.md']
-      const papersMarkdownFiles = ['papers/about.md', 'papers/music.md', 'papers/hobbies.md']
       
-      // Remove old markdown files from root if they exist
+      // Remove only root-level markdown files that could conflict with GitHub Pages routing
       markdownFiles.forEach(file => {
         const rootPath = resolve(outDir, file)
         if (existsSync(rootPath)) {
@@ -22,14 +22,8 @@ const handleMarkdownFiles = () => {
         }
       })
       
-      // Remove papers markdown files from root if they were copied there
-      papersMarkdownFiles.forEach(file => {
-        const rootPath = resolve(outDir, file)
-        if (existsSync(rootPath)) {
-          unlinkSync(rootPath)
-          console.log(`Removed ${file} from root to prevent GitHub Pages conflicts`)
-        }
-      })
+      // Keep papers/ directory intact - don't remove these files
+      console.log('Preserving papers/ directory structure for React app access')
     }
   }
 }

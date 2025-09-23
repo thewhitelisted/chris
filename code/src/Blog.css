@@ -162,7 +162,7 @@
   
   .list-header {
     grid-template-columns: 1fr 90px;
-    padding: 8px 8px;
+    padding: 8px 4px;
     font-size: 12px;
     height: auto;
   }
@@ -170,7 +170,7 @@
   .row {
     grid-template-columns: 1fr 90px;
     height: 48px;
-    padding: 8px 8px;
+    padding: 8px 4px;
     font-size: 13px;
   }
   
@@ -230,7 +230,7 @@
 @media (max-width: 480px) {
   .blog-window {
     width: 100%;
-    max-width: 100%;
+    max-width: 85%;
     border-radius: 6px;
     margin-top: 0;
     border: 1px solid rgba(0,0,0,0.12);
@@ -251,14 +251,14 @@
     grid-template-columns: 1fr 70px;
     font-size: 11px;
     height: auto;
-    padding: 8px 6px;
+    padding: 8px 2px;
   }
   
   .row {
     grid-template-columns: 1fr 70px;
     height: 52px;
     font-size: 12px;
-    padding: 10px 6px;
+    padding: 10px 2px;
   }
   
   .row .col.name {
