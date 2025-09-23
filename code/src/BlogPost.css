@@ -101,7 +101,7 @@
   .paper-page {
     width: 100%;
     max-width: 100%;
-    padding: 50px 40px;
+    padding: 50px 24px;
     min-height: auto;
     /* Maintain aspect ratio but allow height to be flexible */
     aspect-ratio: unset;
@@ -143,7 +143,7 @@
   
   .paper-page {
     width: 100%;
-    padding: 40px 24px;
+    padding: 40px 16px;
     border-radius: 6px;
     /* Keep mobile pages readable but allow more content per page */
     min-height: 60vh;
