@@ -149,15 +149,30 @@ function Music() {
   }, [markdownContent])
 
   if (loading) {
-    return <div className="blog-post-content"><div className="loading">Loading...</div></div>
+    return (
+      <div className="blog-post-paginated">
+        <div className="paper-page">
+          <div className="markdown-content">
+            <div className="loading" style={{padding: '2rem', textAlign: 'center'}}>
+              <h1 className="post-title">music: Loading...</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (error) {
     return (
-      <div className="blog-post-content">
-        <div className="error">
-          <h1>Content Not Found</h1>
-          <p>{error}</p>
+      <div className="blog-post-paginated">
+        <div className="paper-page">
+          <div className="markdown-content">
+            <div className="error" style={{padding: '2rem'}}>
+              <h1 className="post-title">music: Content Not Found</h1>
+              <p className="post-paragraph">{error}</p>
+              <p className="post-paragraph">Please check that the music.md file is available in the public directory.</p>
+            </div>
+          </div>
         </div>
       </div>
     )

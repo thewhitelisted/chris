@@ -9,34 +9,24 @@
 
 html, body {
   height: 100%;
+  width: 100%;
   font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f6ecd6; /* parchment */
+  position: relative;
 }
 
-/* Prevent FOUC (Flash of Unstyled Content) in production */
-html:not(.loaded) {
-  visibility: hidden;
-}
-
-html.loaded {
-  visibility: visible;
-}
-
-/* Smooth transition when content becomes visible */
+/* Prevent FOUC by ensuring consistent background */
 body {
-  opacity: 0;
-  transition: opacity 0.2s ease-in;
-}
-
-html.loaded body {
-  opacity: 1;
+  background-color: #f6ecd6; /* Ensure parchment background is always present */
 }
 
 #root {
   height: 100%;
   width: 100%;
+  position: relative;
+  overflow-x: hidden;
 }
 
 /* Ensure smooth scrolling */

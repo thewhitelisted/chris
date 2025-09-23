@@ -42,13 +42,6 @@ function Layout() {
     }
   }, [isHome])
 
-  useEffect(() => {
-    // Ensure content is visible after React has mounted and styled
-    const timer = setTimeout(() => {
-      document.documentElement.classList.add('loaded')
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [])
 
   return (
     <div className={`layout${isExplorerRoute ? ' blog-mode' : ''}`}>
