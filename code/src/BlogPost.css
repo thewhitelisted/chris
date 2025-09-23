@@ -5,10 +5,10 @@
 }
 
 /* Paginated paper view */
-.blog-post-paginated { width: var(--paper-width); margin-top: var(--paper-top-offset); }
-.pages { width: 100%; display: flex; flex-direction: column; margin-top: 0px; gap: 48px; }
-.paper-page { background: #fffdfa; border: 1px solid rgba(0,0,0,0.08); border-radius: 0; box-shadow: 0 6px 20px rgba(0,0,0,0.15); padding: 60px 60px; min-height: calc(720px * (11 / 8.5)); box-sizing: border-box; display: flex; width: var(--paper-width); }
-.paper-page .markdown-content { width: 100%; }
+.blog-post-paginated { width: var(--paper-width); max-width: 100vw; margin-top: var(--paper-top-offset); }
+.pages { width: 100%; max-width: 100vw; display: flex; flex-direction: column; margin-top: 0px; gap: 48px; }
+.paper-page { background: #fffdfa; border: 1px solid rgba(0,0,0,0.08); border-radius: 0; box-shadow: 0 6px 20px rgba(0,0,0,0.15); padding: 60px 60px; min-height: calc(720px * (11 / 8.5)); box-sizing: border-box; display: flex; width: var(--paper-width); max-width: 100vw; }
+.paper-page .markdown-content { width: 100%; max-width: 100%; }
 
 /* Letter-style typography to match home page */
 .paper-page, .paper-page .markdown-content, .paper-page .markdown-content *:not(code):not(pre) {
@@ -88,18 +88,27 @@
 @media (max-width: 768px) {
   .blog-post-paginated {
     width: 100%;
+    max-width: 100%;
     margin-top: 0.5rem;
+    padding: 0;
   }
   
   .pages {
     gap: 24px;
-    padding: 0 16px;
+    padding: 0;
   }
   
   .paper-page {
-    padding: 40px 30px;
-    min-height: auto;
     width: 100%;
+    max-width: 100%;
+    padding: 50px 40px;
+    min-height: auto;
+    /* Maintain aspect ratio but allow height to be flexible */
+    aspect-ratio: unset;
+    border-radius: 8px;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   
   .blog-post-container {
@@ -121,17 +130,26 @@
 
 @media (max-width: 480px) {
   .blog-post-paginated {
+    width: 100%;
+    max-width: 100%;
     margin-top: 0.25rem;
+    padding: 0;
   }
   
   .pages {
     gap: 16px;
-    padding: 0 8px;
+    padding: 0;
   }
   
   .paper-page {
-    padding: 24px 20px;
-    border-radius: 8px;
+    width: 100%;
+    padding: 40px 24px;
+    border-radius: 6px;
+    /* Keep mobile pages readable but allow more content per page */
+    min-height: 60vh;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   
   .post-title { font-size: 1.4rem; }

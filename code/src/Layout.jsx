@@ -1,12 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Home, User, FolderOpen, BookOpen, FileText, Music, Heart, Lightbulb } from 'lucide-react'
+import { Home, User, FolderOpen, BookOpen, FileText, Music, Heart, Lightbulb, Menu, X } from 'lucide-react'
 import './Layout.css'
 
 function Layout() {
   const location = useLocation()
   const isHome = location.pathname === '/'
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const navItems = [
     { path: '/', label: 'home', icon: Home },
@@ -41,11 +42,28 @@ function Layout() {
     }
   }, [isHome])
 
+  useEffect(() => {
+    // Ensure content is visible after React has mounted and styled
+    const timer = setTimeout(() => {
+      document.documentElement.classList.add('loaded')
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <div className={`layout${isExplorerRoute ? ' blog-mode' : ''}`}>
+      {isMobileMenuOpen && <div className="mobile-overlay" onClick={() => setIsMobileMenuOpen(false)} />}
       <div className="layout-inner">
       <aside className="sidebar">
-        <div className="sidebar-inner">
+        <button 
+          className="mobile-menu-toggle"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle navigation menu"
+        >
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+        
+        <div className={`sidebar-inner${isMobileMenuOpen ? ' mobile-open' : ''}`}>
           <div className="brand">navigator</div>
           <nav className="nav">
             {navItems.map((item) => {
@@ -55,12 +73,26 @@ function Layout() {
                 location.pathname === item.path
               )
               const IconComponent = item.icon
+              const handleClick = () => setIsMobileMenuOpen(false)
+              
               return item.external ? (
-                <a key={item.label} href={item.path} className={`nav-item${isActive ? ' active' : ''}`} target={item.path.startsWith('http') || item.path.startsWith('mailto:') || item.path.endsWith('.pdf') ? '_blank' : undefined} rel={item.path.startsWith('http') || item.path.endsWith('.pdf') ? 'noreferrer noopener' : undefined}>
+                <a 
+                  key={item.label} 
+                  href={item.path} 
+                  className={`nav-item${isActive ? ' active' : ''}`} 
+                  target={item.path.startsWith('http') || item.path.startsWith('mailto:') || item.path.endsWith('.pdf') ? '_blank' : undefined} 
+                  rel={item.path.startsWith('http') || item.path.endsWith('.pdf') ? 'noreferrer noopener' : undefined}
+                  onClick={handleClick}
+                >
                   <IconComponent className="nav-icon" size={14} />{item.label}
                 </a>
               ) : (
-                <Link key={item.label} to={item.path} className={`nav-item${isActive ? ' active' : ''}`}>
+                <Link 
+                  key={item.label} 
+                  to={item.path} 
+                  className={`nav-item${isActive ? ' active' : ''}`}
+                  onClick={handleClick}
+                >
                   <IconComponent className="nav-icon" size={14} />{item.label}
                 </Link>
               )
@@ -72,13 +104,19 @@ function Layout() {
             {personalItems.map((item) => {
               const IconComponent = item.icon
               const isActive = item.path && location.pathname === item.path
+              const handleClick = () => setIsMobileMenuOpen(false)
               
               return item.disabled ? (
                 <span key={item.label} className="nav-item disabled">
                   <IconComponent className="nav-icon" size={14} />{item.label}
                 </span>
               ) : (
-                <Link key={item.label} to={item.path} className={`nav-item${isActive ? ' active' : ''}`}>
+                <Link 
+                  key={item.label} 
+                  to={item.path} 
+                  className={`nav-item${isActive ? ' active' : ''}`}
+                  onClick={handleClick}
+                >
                   <IconComponent className="nav-icon" size={14} />{item.label}
                 </Link>
               )

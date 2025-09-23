@@ -63,11 +63,14 @@ function Hobbies() {
         return
       }
       
-      // Calculate based on current page width using Letter ratio (11/8.5), then subtract vertical padding (60+60)
+      // Responsive page dimensions
       const pagesContainer = document.querySelector('.pages')
-      const pageOuterWidth = pagesContainer?.clientWidth || 720
-      const pageOuterHeight = Math.round(pageOuterWidth * (11 / 8.5))
-      const pageInnerHeight = Math.max(1, pageOuterHeight - 120)
+      const isMobile = window.innerWidth <= 768
+      const pageOuterWidth = pagesContainer?.clientWidth || (isMobile ? Math.min(window.innerWidth - 32, 720) : 720)
+      const pageOuterHeight = isMobile ? 
+        Math.max(window.innerHeight * 0.7, 500) : // Mobile: use viewport height, min 500px
+        Math.round(pageOuterWidth * (11 / 8.5)) // Desktop: maintain letter aspect ratio
+      const pageInnerHeight = Math.max(1, pageOuterHeight - (isMobile ? 80 : 120))
       const pages = []
       let current = document.createElement('div')
       current.className = 'markdown-content'

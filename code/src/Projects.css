@@ -1,7 +1,7 @@
 /* Projects Window - Based on Blog.css */
 .projects-window { 
   width: var(--paper-width); 
-  max-width: var(--paper-width); 
+  max-width: 100vw; 
   margin-top: var(--paper-top-offset); 
   border: 1px solid rgba(0,0,0,0.12); 
   background: #f8f8f8; 
@@ -296,103 +296,172 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .projects-window {
-    margin-top: 0.5rem;
+    margin-top: 0;
     width: 100%;
     max-width: 100%;
-  }
-  
-  .list-header {
-    grid-template-columns: 1fr 100px 100px;
-    padding: 0 4px;
-    font-size: 11px;
-  }
-  
-  .row {
-    grid-template-columns: 1fr 100px 100px;
-    height: 40px;
-    padding: 0 4px;
-    font-size: 12px;
-  }
-  
-  .row .col.date { width: 100px; }
-  .row .col.type { width: 100px; }
-  
-  .sticky-note {
-    width: calc(100vw - 40px);
-    max-width: 320px;
-    min-height: 350px;
-  }
-  
-  .search-wrap {
-    width: 180px;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.12);
   }
   
   .toolbar {
-    padding: 4px 8px;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .search-wrap {
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+  
+  .list-header {
+    grid-template-columns: 1fr 90px 90px;
+    padding: 8px 12px;
+    font-size: 12px;
+    height: auto;
+  }
+  
+  .row {
+    grid-template-columns: 1fr 90px 90px;
+    height: 48px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .row .col.name {
+    padding-left: 0;
+    gap: 8px;
+  }
+  
+  .row .col.date { 
+    width: 90px; 
+    font-size: 11px;
+    text-align: center;
+  }
+  
+  .row .col.type { 
+    width: 90px; 
+    font-size: 11px;
+    text-align: center;
+  }
+  
+  .file-name {
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  
+  .file-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  
+  .type-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  
+  .sticky-note {
+    width: calc(100vw - 20px);
+    max-width: 340px;
+    min-height: 380px;
+    left: 10px;
+    top: 10px;
   }
 }
 
 @media (max-width: 480px) {
   .projects-window {
-    border-radius: 8px;
-    margin-top: 0.25rem;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 6px;
+    margin-top: 0;
+    border: 1px solid rgba(0,0,0,0.12);
   }
   
   .toolbar {
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px;
+    padding: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
   }
   
   .search-wrap {
     width: 100%;
+    min-width: unset;
   }
   
   .list-header {
-    grid-template-columns: 1fr 70px 80px;
-    font-size: 10px;
-    height: 28px;
-    padding: 0 2px;
+    grid-template-columns: 1fr 70px 75px;
+    font-size: 11px;
+    height: auto;
+    padding: 8px 12px;
   }
   
   .row {
-    grid-template-columns: 1fr 70px 80px;
-    height: 36px;
-    font-size: 11px;
-    padding: 0 2px;
+    grid-template-columns: 1fr 70px 75px;
+    height: 52px;
+    font-size: 12px;
+    padding: 10px 12px;
   }
   
-  .row .col.date { width: 70px; font-size: 10px; }
-  .row .col.type { width: 80px; font-size: 10px; }
+  .row .col.name {
+    gap: 6px;
+  }
   
-  .file-name { font-size: 11px; }
-  .file-icon { width: 14px; height: 14px; }
+  .row .col.date { 
+    width: 70px; 
+    font-size: 10px;
+    text-align: center;
+  }
+  
+  .row .col.type { 
+    width: 75px; 
+    font-size: 10px;
+    text-align: center;
+  }
+  
+  .file-name { 
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  
+  .file-icon { 
+    width: 14px; 
+    height: 14px; 
+  }
   
   .type-badge {
-    padding: 1px 6px;
+    padding: 2px 4px;
     font-size: 9px;
+    border-radius: 3px;
   }
   
   .sticky-note {
-    width: calc(100vw - 20px);
-    max-width: 280px;
-    min-height: 300px;
-    position: fixed;
-    left: 10px;
-    top: 10px;
+    width: calc(100vw - 16px);
+    max-width: 320px;
+    min-height: 360px;
+    left: 8px;
+    top: 8px;
   }
   
   .sticky-note-content {
-    padding: 0 12px 12px 12px;
-    gap: 8px;
+    padding: 12px;
+    gap: 10px;
   }
   
   .sticky-note-title {
     font-size: 16px;
+    line-height: 1.3;
   }
   
   .sticky-note-description {
     font-size: 13px;
+    line-height: 1.4;
   }
   
   .tech-tag {

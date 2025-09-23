@@ -15,6 +15,25 @@ html, body {
   background-color: #f6ecd6; /* parchment */
 }
 
+/* Prevent FOUC (Flash of Unstyled Content) in production */
+html:not(.loaded) {
+  visibility: hidden;
+}
+
+html.loaded {
+  visibility: visible;
+}
+
+/* Smooth transition when content becomes visible */
+body {
+  opacity: 0;
+  transition: opacity 0.2s ease-in;
+}
+
+html.loaded body {
+  opacity: 1;
+}
+
 #root {
   height: 100%;
   width: 100%;

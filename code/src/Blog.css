@@ -1,5 +1,5 @@
 /* Window-style explorer */
-.blog-window { width: var(--paper-width); max-width: var(--paper-width); margin-top: var(--paper-top-offset); border: 1px solid rgba(0,0,0,0.12); background: #f8f8f8; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-radius: 10px; overflow: hidden; box-sizing: border-box; margin-left: 0; }
+.blog-window { width: var(--paper-width); max-width: 100vw; margin-top: var(--paper-top-offset); border: 1px solid rgba(0,0,0,0.12); background: #f8f8f8; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-radius: 10px; overflow: hidden; box-sizing: border-box; margin-left: 0; }
 .blog-window, .blog-window * {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
@@ -140,31 +140,59 @@
   .blog-window {
     width: 100%;
     max-width: 100%;
-    margin-top: 0.5rem;
+    margin-top: 0;
     border-radius: 8px;
-  }
-  
-  .list-header {
-    grid-template-columns: 1fr 80px;
-    padding: 0 4px;
-    font-size: 11px;
-  }
-  
-  .row {
-    grid-template-columns: 1fr 80px;
-    height: 40px;
-    padding: 0 4px;
-    font-size: 12px;
-  }
-  
-  .row .col.date { width: 80px; }
-  
-  .search-wrap {
-    width: 180px;
+    border: 1px solid rgba(0,0,0,0.12);
   }
   
   .toolbar {
-    padding: 4px 8px;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .search-wrap {
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+  
+  .list-header {
+    grid-template-columns: 1fr 90px;
+    padding: 8px 12px;
+    font-size: 12px;
+    height: auto;
+  }
+  
+  .row {
+    grid-template-columns: 1fr 90px;
+    height: 48px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .row .col.name {
+    gap: 8px;
+  }
+  
+  .row .col.date { 
+    width: 90px; 
+    font-size: 11px;
+    text-align: center;
+  }
+  
+  .file-name {
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  
+  .file-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
   }
   
   .blog-content {
@@ -201,38 +229,57 @@
 
 @media (max-width: 480px) {
   .blog-window {
+    width: 100%;
+    max-width: 100%;
     border-radius: 6px;
-    margin-top: 0.25rem;
+    margin-top: 0;
+    border: 1px solid rgba(0,0,0,0.12);
   }
   
   .toolbar {
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px;
+    padding: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
   }
   
   .search-wrap {
     width: 100%;
+    min-width: unset;
   }
   
   .list-header {
-    grid-template-columns: 1fr 60px;
-    font-size: 10px;
-    height: 28px;
-    padding: 0 2px;
+    grid-template-columns: 1fr 70px;
+    font-size: 11px;
+    height: auto;
+    padding: 8px 12px;
   }
   
   .row {
-    grid-template-columns: 1fr 60px;
-    height: 36px;
-    font-size: 11px;
-    padding: 0 2px;
+    grid-template-columns: 1fr 70px;
+    height: 52px;
+    font-size: 12px;
+    padding: 10px 12px;
   }
   
-  .row .col.date { width: 60px; font-size: 10px; }
+  .row .col.name {
+    gap: 6px;
+  }
   
-  .file-name { font-size: 11px; }
-  .file-icon { width: 14px; height: 14px; }
+  .row .col.date { 
+    width: 70px; 
+    font-size: 10px;
+    text-align: center;
+  }
+  
+  .file-name { 
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  
+  .file-icon { 
+    width: 14px; 
+    height: 14px; 
+  }
   
   .blog-title {
     font-size: 1.8rem;
