@@ -85,6 +85,32 @@
 .post-bold { color: #111827; font-weight: 600; }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .blog-post-paginated {
+    width: 100%;
+    max-width: 100vw;
+    margin-top: 0.75rem;
+    padding: 0;
+  }
+  
+  .pages {
+    gap: 32px;
+    padding: 0;
+  }
+  
+  .paper-page {
+    width: 85%;
+    max-width: 100%;
+    padding: 50px 30px 50px 20px;
+    min-height: auto;
+    aspect-ratio: unset;
+    border-radius: 10px;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
 @media (max-width: 768px) {
   .blog-post-paginated {
     width: 100%;
@@ -99,9 +125,9 @@
   }
   
   .paper-page {
-    width: 100%;
+    width: 85%;
     max-width: 100%;
-    padding: 50px 12px;
+    padding: 50px 30px 50px 20px;
     min-height: auto;
     /* Maintain aspect ratio but allow height to be flexible */
     aspect-ratio: unset;
@@ -142,8 +168,8 @@
   }
   
   .paper-page {
-    width: 100%;
-    padding: 40px 8px;
+    width: 85%;
+    padding: 40px 30px 40px 20px;
     border-radius: 6px;
     /* Keep mobile pages readable but allow more content per page */
     min-height: 60vh;

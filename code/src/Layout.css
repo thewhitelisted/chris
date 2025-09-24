@@ -103,7 +103,7 @@ html, body {
   color: var(--ink);
 }
 
-@media (max-width: 880px) {
+@media (max-width: 1024px) {
   .layout { 
     flex-direction: column; 
     align-items: stretch; 
@@ -116,7 +116,7 @@ html, body {
   }
   
   .layout-inner { 
-    width: 85%; 
+    width: 0%; 
     max-width: 100vw;
     margin: 0;
   }
@@ -147,8 +147,8 @@ html, body {
   
   .content { 
     margin-left: 0; 
-    padding: 60px 16px 16px 0px;
-    width: 100vw;
+    padding: 60px 30px 16px 0px;
+    width: 85%;
     max-width: 100vw;
     box-sizing: border-box;
   }
@@ -199,11 +199,35 @@ html, body {
   }
 }
 
+@media (max-width: 768px) {
+  .content { 
+    padding: 60px 30px 16px 0px;
+    width: 85%;
+    max-width: 100%;
+  }
+  
+  .paper { 
+    padding: 30px 4px;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  .sidebar-inner {
+    width: 270px;
+  }
+  
+  .nav-item { 
+    padding: 11px 14px; 
+    font-size: 13px; 
+  }
+}
+
 @media (max-width: 480px) {
   .content { 
-    padding: 60px 12px 8px 0px;
-    width: 85vw;
-    max-width: 100vw;
+    padding: 60px 30px 8px 0px;
+    width: 85%;
+    max-width: 100%;
   }
   
   .paper { 
@@ -220,6 +244,30 @@ html, body {
   .nav-item { 
     padding: 10px 12px; 
     font-size: 13px; 
+  }
+}
+
+@media (max-width: 390px) {
+  .content { 
+    padding: 60px 30px 8px 0px;
+    width: 85%;
+    max-width: 100%;
+  }
+  
+  .paper { 
+    padding: 18px 4px;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  .sidebar-inner {
+    width: 250px;
+  }
+  
+  .nav-item { 
+    padding: 9px 10px; 
+    font-size: 12px; 
   }
 }
 
