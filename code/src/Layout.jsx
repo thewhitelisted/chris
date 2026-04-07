@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Home, User, FolderOpen, BookOpen, FileText, Music, Heart, Lightbulb, Menu, X } from 'lucide-react'
+import { Home, User, FolderOpen, BookOpen, FileText, Music, Lightbulb, Menu, X } from 'lucide-react'
 import './Layout.css'
 
 function Layout() {
@@ -22,16 +21,6 @@ function Layout() {
     { path: '/hobbies', label: 'interests', icon: Lightbulb },
   ]
 
-  const isBlogRoute = location.pathname.startsWith('/blog')
-  const isProjectsRoute = location.pathname.startsWith('/projects')
-  const isAboutRoute = location.pathname === '/about'
-  const isMusicRoute = location.pathname === '/music'
-  const isHobbiesRoute = location.pathname === '/hobbies'
-  const isExplorerRoute = isBlogRoute || isProjectsRoute
-  const isPaginatedRoute = isBlogRoute || isAboutRoute || isMusicRoute || isHobbiesRoute
-  const isFullWidthRoute = isExplorerRoute || isPaginatedRoute
-
-  // Disable page scroll on home route; restore elsewhere
   useEffect(() => {
     if (isHome) {
       const prev = document.body.style.overflow
@@ -42,105 +31,84 @@ function Layout() {
     }
   }, [isHome])
 
-
   return (
-    <div className={`layout${isExplorerRoute ? ' blog-mode' : ''}`}>
+    <div className="layout">
       {isMobileMenuOpen && <div className="mobile-overlay" onClick={() => setIsMobileMenuOpen(false)} />}
       <div className="layout-inner">
-      <aside className="sidebar">
-        <button 
-          className="mobile-menu-toggle"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle navigation menu"
-        >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
-        
-        <div className={`sidebar-inner${isMobileMenuOpen ? ' mobile-open' : ''}`}>
-          <div className="brand">navigator</div>
-          <nav className="nav">
-            {navItems.map((item) => {
-              const isActive = !item.external && (
-                (item.path === '/blog' && location.pathname.startsWith('/blog')) ||
-                (item.path === '/projects' && location.pathname.startsWith('/projects')) ||
-                location.pathname === item.path
-              )
-              const IconComponent = item.icon
-              const handleClick = () => setIsMobileMenuOpen(false)
-              
-              return item.external ? (
-                <a 
-                  key={item.label} 
-                  href={item.path} 
-                  className={`nav-item${isActive ? ' active' : ''}`} 
-                  target={item.path.startsWith('http') || item.path.startsWith('mailto:') || item.path.endsWith('.pdf') ? '_blank' : undefined} 
-                  rel={item.path.startsWith('http') || item.path.endsWith('.pdf') ? 'noreferrer noopener' : undefined}
-                  onClick={handleClick}
-                >
-                  <IconComponent className="nav-icon" size={14} />{item.label}
-                </a>
-              ) : (
-                <Link 
-                  key={item.label} 
-                  to={item.path} 
-                  className={`nav-item${isActive ? ' active' : ''}`}
-                  onClick={handleClick}
-                >
-                  <IconComponent className="nav-icon" size={14} />{item.label}
-                </Link>
-              )
-            })}
-          </nav>
-          <div className="divider" />
-          <div className="section-label">personal</div>
-          <nav className="nav">
-            {personalItems.map((item) => {
-              const IconComponent = item.icon
-              const isActive = item.path && location.pathname === item.path
-              const handleClick = () => setIsMobileMenuOpen(false)
-              
-              return item.disabled ? (
-                <span key={item.label} className="nav-item disabled">
-                  <IconComponent className="nav-icon" size={14} />{item.label}
-                </span>
-              ) : (
-                <Link 
-                  key={item.label} 
-                  to={item.path} 
-                  className={`nav-item${isActive ? ' active' : ''}`}
-                  onClick={handleClick}
-                >
-                  <IconComponent className="nav-icon" size={14} />{item.label}
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
-      </aside>
-      <main className="content">
-        <div className="sidebar-spacer" />
-        <div className="content-pane" style={{ marginTop: 'var(--paper-top-offset)' }}>
-          {isFullWidthRoute ? (
+        <aside className="sidebar">
+          <button
+            className="mobile-menu-toggle"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            {isMobileMenuOpen ? <X size={17} /> : <Menu size={17} />}
+          </button>
+
+          <div className={`sidebar-inner${isMobileMenuOpen ? ' mobile-open' : ''}`}>
+            <div className="brand">cl</div>
+            <nav className="nav">
+              {navItems.map((item) => {
+                const isActive = !item.external && (
+                  (item.path === '/blog' && location.pathname.startsWith('/blog')) ||
+                  (item.path === '/projects' && location.pathname.startsWith('/projects')) ||
+                  location.pathname === item.path
+                )
+                const IconComponent = item.icon
+                const handleClick = () => setIsMobileMenuOpen(false)
+
+                return item.external ? (
+                  <a
+                    key={item.label}
+                    href={item.path}
+                    className={`nav-item${isActive ? ' active' : ''}`}
+                    target={item.path.endsWith('.pdf') ? '_blank' : undefined}
+                    rel={item.path.endsWith('.pdf') ? 'noreferrer noopener' : undefined}
+                    onClick={handleClick}
+                  >
+                    <IconComponent className="nav-icon" size={13} />{item.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.label}
+                    to={item.path}
+                    className={`nav-item${isActive ? ' active' : ''}`}
+                    onClick={handleClick}
+                  >
+                    <IconComponent className="nav-icon" size={13} />{item.label}
+                  </Link>
+                )
+              })}
+            </nav>
+            <div className="divider" />
+            <div className="section-label">personal</div>
+            <nav className="nav">
+              {personalItems.map((item) => {
+                const IconComponent = item.icon
+                const isActive = location.pathname === item.path
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.path}
+                    className={`nav-item${isActive ? ' active' : ''}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <IconComponent className="nav-icon" size={13} />{item.label}
+                  </Link>
+                )
+              })}
+            </nav>
+          </div>
+        </aside>
+
+        <main className="content">
+          <div className="sidebar-spacer" />
+          <div className={`content-pane${isHome ? ' content-pane-home' : ''}`}>
             <Outlet />
-          ) : (
-            <motion.div
-              key={location.pathname}
-              className="paper"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              style={isHome ? { overflow: 'hidden', marginLeft: '-6px' } : undefined}
-            >
-              <Outlet />
-            </motion.div>
-          )}
-        </div>
-      </main>
+          </div>
+        </main>
       </div>
     </div>
   )
 }
 
 export default Layout
-
-

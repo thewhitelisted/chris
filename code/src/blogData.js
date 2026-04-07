@@ -3,7 +3,7 @@ export const blogPosts = [
   {
     title: "how i deal with having adhd",
     date: "18 June, 2025",
-    description: "handing adhd as a double degree student pursing quant finance",
+    description: "handing adhd as a double degree student pursing finance",
     slug: "handling-adhd"
   },
 ]

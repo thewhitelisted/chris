@@ -1,211 +1,152 @@
-.blog-post-content {
-  max-width: var(--paper-width);
-  margin: 0 auto;
-  padding: 2rem 0;
+.content-page {
+  padding: 48px 0 80px;
+  width: 100%;
 }
 
-/* Paginated paper view */
-.blog-post-paginated { width: var(--paper-width); max-width: 100vw; margin-top: var(--paper-top-offset); }
-.pages { width: 100%; max-width: 100vw; display: flex; flex-direction: column; margin-top: 0px; gap: 48px; }
-.paper-page { background: #fffdfa; border: 1px solid rgba(0,0,0,0.08); border-radius: 0; box-shadow: 0 6px 20px rgba(0,0,0,0.15); padding: 60px 60px; min-height: calc(720px * (11 / 8.5)); box-sizing: border-box; display: flex; width: var(--paper-width); max-width: 100vw; }
-.paper-page .markdown-content { width: 100%; max-width: 100%; }
-
-/* Letter-style typography to match home page */
-.paper-page, .paper-page .markdown-content, .paper-page .markdown-content *:not(code):not(pre) {
-  font-family: 'Times New Roman', Times, serif;
-  color: #222;
-}
-.paper-page .markdown-content { font-size: 15px; line-height: 1.75; }
-.markdown-content { line-height: 1.75; }
-.post-title,
-.post-heading,
-.post-subheading,
-.post-paragraph,
-.post-list-item { font-size: 15px; }
-.post-title,
-.post-heading,
-.post-subheading { font-weight: 700; text-decoration: underline; text-underline-offset: 2px; color: #222; }
-.post-title { margin: 0 0 0.75rem 0; line-height: 1.3; }
-.post-heading { margin: 1rem 0 0.6rem 0; line-height: 1.4; }
-.post-subheading { margin: 0.8rem 0 0.5rem 0; line-height: 1.4; }
-.post-paragraph { color: #222; margin: 0.9rem 0; font-size: 15px; }
-
-/* back navigation removed in new layout */
-
-.loading,
-.error { text-align: center; padding: 2rem 1rem; }
-
-.error h1 {
-  color: #ef4444;
-  margin-bottom: 1rem;
+.content-loading {
+  font-size: 12px;
+  color: #a3a3a3;
+  font-family: 'DM Mono', monospace;
 }
 
-.error p {
-  color: #9ca3af;
-  margin-bottom: 2rem;
+.post-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #111111;
+  margin: 0 0 36px;
+  line-height: 1.2;
 }
 
-/* Markdown Content Styles */
-.markdown-content {
+.post-heading {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a3a3a3;
+  font-family: 'DM Mono', monospace;
+  margin: 44px 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.post-subheading {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111111;
+  margin: 24px 0 10px;
+  letter-spacing: -0.005em;
+}
+
+.post-paragraph {
+  font-size: 15px;
   line-height: 1.75;
+  color: #525252;
+  margin: 0 0 14px;
 }
 
-.post-title { font-size: 15px; font-weight: 700; color: #222; margin: 0 0 0.75rem 0; line-height: 1.3; text-decoration: underline; text-underline-offset: 2px; }
-
-.post-heading { font-size: 15px; font-weight: 700; color: #222; margin: 1rem 0 0.6rem 0; line-height: 1.4; text-decoration: underline; text-underline-offset: 2px; }
-
-.post-subheading { font-size: 15px; font-weight: 700; color: #2b2b2b; margin: 0.8rem 0 0.5rem 0; line-height: 1.4; text-decoration: underline; text-underline-offset: 2px; }
-
-.post-paragraph { color: #222; margin: 0.9rem 0; font-size: 15px; }
-
-.post-date { color: #6b7280; font-style: italic; font-size: 0.95rem; display: block; margin-bottom: 1rem; }
+.post-date {
+  font-size: 11px;
+  color: #a3a3a3;
+  font-family: 'DM Mono', monospace;
+  display: block;
+  margin-bottom: 36px;
+  font-style: normal;
+}
 
 .post-list,
 .post-ordered-list {
-  margin: 1.5rem 0;
-  padding-left: 2rem;
+  margin: 0 0 14px;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.post-list-item { color: #2b2b2b; margin: 0.4rem 0; font-size: 1rem; }
+.post-list-item {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #525252;
+}
 
 .post-list-item::marker {
-  color: #000000;
+  color: #d4d4d4;
 }
 
-.post-inline-code { background: rgba(0,0,0,0.05); color: #b45309; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Fira Code', 'Monaco', 'Consolas', monospace; font-size: 0.9em; }
-
-.post-code-block { background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 1rem; margin: 1.2rem 0; overflow-x: auto; font-family: 'Fira Code', 'Monaco', 'Consolas', monospace; line-height: 1.5; }
-
-.post-code-block code { color: #111827; font-size: 0.9rem; }
-
-.post-quote { border-left: 4px solid #2563eb; background: rgba(37,99,235,0.08); margin: 1.2rem 0; padding: 1rem 1.4rem; border-radius: 0 8px 8px 0; font-style: italic; color: #1f2937; }
-
-.post-divider { border: none; height: 1px; background: rgba(0,0,0,0.1); margin: 1.5rem 0; }
-
-.post-bold { color: #111827; font-weight: 600; }
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .blog-post-paginated {
-    width: 100%;
-    max-width: 100vw;
-    margin-top: 0.75rem;
-    padding: 0;
-  }
-  
-  .pages {
-    gap: 32px;
-    padding: 0;
-  }
-  
-  .paper-page {
-    width: 85%;
-    max-width: 100%;
-    padding: 50px 30px 50px 20px;
-    min-height: auto;
-    aspect-ratio: unset;
-    border-radius: 10px;
-    box-sizing: border-box;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
+.post-inline-code {
+  background: #f4f4f5;
+  color: #111111;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.87em;
 }
+
+.post-code-block {
+  background: #f4f4f5;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 20px 0;
+  overflow-x: auto;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.post-code-block code {
+  color: #111111;
+}
+
+.post-quote {
+  border-left: 2px solid #e5e5e5;
+  margin: 20px 0;
+  padding: 2px 20px;
+  color: #737373;
+}
+
+.post-divider {
+  border: none;
+  height: 1px;
+  background: #e5e5e5;
+  margin: 36px 0;
+}
+
+.post-bold {
+  font-weight: 600;
+  color: #111111;
+}
+
+.loading,
+.error {
+  padding: 48px 0;
+  font-size: 14px;
+  color: #a3a3a3;
+  font-family: 'DM Mono', monospace;
+}
+
+/* Legacy classes — kept for compatibility */
+.blog-post-paginated { width: 100%; }
+.pages { width: 100%; }
+.paper-page { width: 100%; }
+.markdown-content { width: 100%; }
 
 @media (max-width: 768px) {
-  .blog-post-paginated {
-    width: 100%;
-    max-width: 100%;
-    margin-top: 0.5rem;
-    padding: 0;
+  .content-page {
+    padding: 32px 0 60px;
   }
-  
-  .pages {
-    gap: 24px;
-    padding: 0;
-  }
-  
-  .paper-page {
-    width: 85%;
-    max-width: 100%;
-    padding: 50px 30px 50px 20px;
-    min-height: auto;
-    /* Maintain aspect ratio but allow height to be flexible */
-    aspect-ratio: unset;
-    border-radius: 8px;
-    box-sizing: border-box;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
-  
-  .blog-post-container {
-    padding: 0;
-  }
-  
-  .blog-post-content {
-    padding: 0;
-  }
-  
-  .post-title { font-size: 1.6rem; }
-  
-  .post-heading { font-size: 1.25rem; }
-  
-  .post-subheading { font-size: 1.1rem; }
-  
-  .post-paragraph { font-size: 0.98rem; }
-}
 
-@media (max-width: 480px) {
-  .blog-post-paginated {
-    width: 100%;
-    max-width: 100%;
-    margin-top: 0.25rem;
-    padding: 0;
+  .post-title {
+    font-size: 20px;
+    margin-bottom: 28px;
   }
-  
-  .pages {
-    gap: 16px;
-    padding: 0;
+
+  .post-paragraph,
+  .post-list-item {
+    font-size: 14px;
   }
-  
-  .paper-page {
-    width: 85%;
-    padding: 40px 30px 40px 20px;
-    border-radius: 6px;
-    /* Keep mobile pages readable but allow more content per page */
-    min-height: 60vh;
-    box-sizing: border-box;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-  }
-  
-  .post-title { font-size: 1.4rem; }
-  
-  .post-heading { font-size: 1.1rem; }
-  
-  .post-subheading { font-size: 1rem; }
-  
-  .post-paragraph { font-size: 0.9rem; line-height: 1.6; }
-  
-  .post-list, .post-ordered-list {
-    margin: 1rem 0;
-    padding-left: 1.5rem;
-  }
-  
-  .post-list-item { font-size: 0.9rem; }
-  
-  .post-code-block { 
-    padding: 0.8rem; 
-    font-size: 0.8rem; 
-    margin: 1rem 0;
-  }
-  
-  .post-quote { 
-    padding: 0.8rem 1.2rem; 
-    margin: 1rem 0;
-  }
-  
-  .post-inline-code { 
-    font-size: 0.8em; 
-    padding: 0.15rem 0.3rem;
+
+  .post-heading {
+    margin-top: 32px;
   }
 }

@@ -2,43 +2,36 @@ import { motion } from 'framer-motion'
 import './App.css'
 
 function App() {
-  const currentDate = new Date().toLocaleDateString(undefined, {
-    year: 'numeric', month: 'long', day: 'numeric'
-  })
-
   return (
-    <motion.div className="letter" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-      <div className="letter-header">
-        <div className="letter-meta">
-          <div className="meta-name">Christopher Lee</div>
-          <div><span className="redaction redaction-long">XXXXXXXXXXXXXXX</span></div>
-          <div className="meta-location">Richmond Hill, ON, <span className="redaction">XXXX</span></div>
-          <div className="meta-date">{currentDate}</div>
+    <motion.div
+      className="home"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      <div className="home-name-block">
+        <h1 className="home-name">Christopher Lee</h1>
+        <div className="home-meta">
+          <span className="home-meta-item">University of Waterloo × Wilfrid Laurier</span>
+          <span className="home-meta-sep">·</span>
+          <span className="home-meta-item">Mathematics & Business</span>
         </div>
       </div>
 
-      <div className="letter-body">
-        <div className="from">From the desk of: <strong>Christopher Lee</strong></div>
-        <p>Hello,</p>
-        <p>
-          If you’re reading this, you’ve stumbled across my website. I’m happy that you’ve taken the
-          time and interest to learn more about me. There’s lots of information about me scattered
-          around various pages, so enjoy!
-        </p>
-        <p>
-          If you don’t already know, my name is Christopher Lee and I’m currently a student at the 
-          <strong> University of Waterloo</strong> and <strong>Wilfrid Laurier University</strong> studying
-          <strong> Mathematics and Business</strong>. My professional aspirations lie in
-          <strong> quantitative finance</strong> and <strong>risk management</strong>. Furthermore, I hope one day to
-          explore philosophy and uncover the secrets of life.
-        </p>
-        <p>
-          Further inquiries, professional or personal, can be directed to my email at
-          <strong><a className="email" href="mailto:jleechris06@gmail.com"> jleechris06[at]gmail[dot]com</a></strong>.
-        </p>
-        <p>Stay golden,</p>
-        <p>Christopher Lee</p>
-      </div>
+      <p className="home-bio">
+        Hi! This is my website, which contains most important info about me. Feel free to contact
+        me using the email addresses below:
+      </p>
+
+      <a className="home-email" href="mailto:jleechris06@gmail.com">
+        jleechris06[at]gmail[dot]com
+      </a>
+      <a className='home-email' href="mailto:cj3lee@uwaterloo.ca">
+        cj3lee[at]uwaterloo[dot]ca
+      </a>
+      <a className='home-email' href="mailto:leex5067@mylaurier.ca">
+        leex5067[at]mylaurier[dot]ca
+      </a>
     </motion.div>
   )
 }

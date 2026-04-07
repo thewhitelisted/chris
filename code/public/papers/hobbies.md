@@ -9,7 +9,3 @@
 - coding
 - reading
 - music and film
-
----
-
--Chris

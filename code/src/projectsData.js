@@ -43,7 +43,7 @@ export const projects = [
   {
     title: "trivial toronto weather model",
     date: "July 2025",
-    description: "Made a ridge regression model of the temperature high/low in toronto on any given day. Model has a mean error of around 2-2.5 degrees.",
+    description: "Made a ridge regression model of the temperature high/low in toronto on any given day.",
     technologies: ["Python", "Ridge Regression", "Machine Learning", "Weather Prediction"],
     type: "ML Model",
     github: "https://github.com/thewhitelisted/weather-model",
