@@ -214,7 +214,6 @@
   max-width: 110px;
 }
 
-/* Sticky Notes */
 .sticky-note {
   width: 300px;
   min-height: 380px;
@@ -354,7 +353,6 @@
     min-width: 140px;
   }
 
-  /* Hide column headers on mobile — replaced by stacked rows */
   .list-header {
     display: none;
   }
@@ -374,7 +372,6 @@
     margin-bottom: 2px;
   }
 
-  /* Date + type appear side-by-side on the second line */
   .col.date {
     padding-left: 26px;
     font-size: 11px;

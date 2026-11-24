@@ -226,7 +226,6 @@
     min-width: 140px;
   }
 
-  /* Hide column headers on mobile — replaced by stacked rows */
   .list-header {
     display: none;
   }
