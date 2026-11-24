@@ -3,6 +3,8 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { Home, User, FolderOpen, BookOpen, FileText, Music, Lightbulb, Menu, X } from 'lucide-react'
 import Loading from './Loading.jsx'
 import RouteErrorBoundary from './RouteErrorBoundary.jsx'
+import { blogPosts } from 'virtual:posts'
+import { titleFor } from './site.js'
 
 function Layout() {
   const location = useLocation()
@@ -21,6 +23,10 @@ function Layout() {
     { path: '/music', label: 'music', icon: Music },
     { path: '/hobbies', label: 'interests', icon: Lightbulb },
   ]
+
+  useEffect(() => {
+    document.title = titleFor(location.pathname, blogPosts)
+  }, [location.pathname])
 
   useEffect(() => {
     if (isHome) {

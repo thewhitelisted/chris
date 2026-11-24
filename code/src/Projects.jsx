@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, FolderOpen } from 'lucide-react'
-import { projects } from './projectsData.js'
+import { projects } from 'virtual:projects'
 import { formatDate } from './dates.js'
 import { useListing } from './listing.js'
 import SortHeader from './SortHeader.jsx'

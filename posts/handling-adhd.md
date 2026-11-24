@@ -1,3 +1,9 @@
+---
+title: how i deal with having adhd
+date: 2025-06-18
+description: handing adhd as a double degree student pursing finance
+---
+
 # handling adhd as a second year double degree student
 
 If you know me, you know that I have a pretty funky case of ADHD. I'm the type of guy to get completely lost in my head because I'm thinking about how I would design/fold a soft taco tortilla to minimize spillage from the bottom (I still think about this constantly).

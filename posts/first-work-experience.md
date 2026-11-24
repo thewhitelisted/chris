@@ -1,3 +1,9 @@
+---
+title: my first work experience in finance
+date: 2026-04-25
+description: I had the opportunity to work at one of Canada's biggest pension funds this winter, here's what I learnt
+---
+
 # my first work experience in finance
 
 Throughout the past 4 months I've worked at British Columbia Investment Management Corporation (BCI) as an analyst. Looking back, I have a few main takeaways that I'd like to share.

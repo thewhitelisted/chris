@@ -1,0 +1,165 @@
+[
+  {
+    "name": "baskets",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/baskets",
+    "description": "Custom baskets/benchmarks with performance, risk and factor analytics",
+    "language": "TypeScript",
+    "homepage": null,
+    "topics": [],
+    "created_at": "2026-11-20T14:28:24Z",
+    "pushed_at": "2026-11-20T15:40:14Z"
+  },
+  {
+    "name": "catanatron",
+    "private": false,
+    "fork": true,
+    "html_url": "https://github.com/thewhitelisted/catanatron",
+    "description": "Settlers of Catan Bot Simulator and Strong AI Player",
+    "language": null,
+    "homepage": "https://docs.catanatron.com",
+    "topics": [],
+    "created_at": "2026-10-26T20:18:47Z",
+    "pushed_at": "2026-10-26T20:18:55Z"
+  },
+  {
+    "name": "cg-531d2447",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/cg-531d2447",
+    "description": null,
+    "language": "HTML",
+    "homepage": null,
+    "topics": [],
+    "created_at": "2026-10-21T15:23:09Z",
+    "pushed_at": "2026-10-29T18:03:43Z"
+  },
+  {
+    "name": "cg-engine",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/cg-engine",
+    "description": null,
+    "language": "Python",
+    "homepage": null,
+    "topics": [],
+    "created_at": "2026-10-21T15:35:57Z",
+    "pushed_at": "2026-11-24T19:24:16Z"
+  },
+  {
+    "name": "chris",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/chris",
+    "description": null,
+    "language": "JavaScript",
+    "homepage": "http://www.christopherjlee.ca/",
+    "topics": [],
+    "created_at": "2025-06-18T00:20:37Z",
+    "pushed_at": "2026-11-24T21:16:30Z"
+  },
+  {
+    "name": "crowdbook",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/crowdbook",
+    "description": "A deterministic, high-performance agent-based limit order book simulator for building, testing, and competing with trading strategies",
+    "language": "C++",
+    "homepage": "",
+    "topics": [
+      "portfolio"
+    ],
+    "created_at": "2026-10-06T20:39:12Z",
+    "pushed_at": "2026-10-20T19:52:19Z"
+  },
+  {
+    "name": "crowdbook-arena",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/crowdbook-arena",
+    "description": null,
+    "language": "Python",
+    "homepage": null,
+    "topics": [],
+    "created_at": "2026-10-19T19:18:55Z",
+    "pushed_at": "2026-10-22T18:39:32Z"
+  },
+  {
+    "name": "hexlab-engine-test",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/hexlab-engine-test",
+    "description": "Test target for the hexlab engine sync (private)",
+    "language": "Rust",
+    "homepage": null,
+    "topics": [],
+    "created_at": "2026-11-17T20:57:38Z",
+    "pushed_at": "2026-11-24T06:18:21Z"
+  },
+  {
+    "name": "leeto-security",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/leeto-security",
+    "description": "A Java app that manages, creates, and checks secure passwords",
+    "language": "Java",
+    "homepage": null,
+    "topics": [],
+    "created_at": "2023-04-03T17:19:43Z",
+    "pushed_at": "2023-05-30T23:01:25Z"
+  },
+  {
+    "name": "monte-carlo-stock-sim",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/monte-carlo-stock-sim",
+    "description": null,
+    "language": "Rust",
+    "homepage": null,
+    "topics": [],
+    "created_at": "2025-03-09T02:06:04Z",
+    "pushed_at": "2025-03-09T14:36:39Z"
+  },
+  {
+    "name": "Pathos",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/Pathos",
+    "description": "A Rust-native, sentiment-driven portfolio optimizer that combines FinBERT news analysis, SEC fundamentals, and Black-Litterman to construct and evaluate equity portfolios.",
+    "language": "Rust",
+    "homepage": "",
+    "topics": [
+      "portfolio"
+    ],
+    "created_at": "2026-10-06T17:30:15Z",
+    "pushed_at": "2026-10-07T02:07:13Z"
+  },
+  {
+    "name": "thewhitelisted",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/thewhitelisted",
+    "description": "Config files for my GitHub profile.",
+    "language": null,
+    "homepage": "https://github.com/thewhitelisted",
+    "topics": [
+      "config",
+      "github-config"
+    ],
+    "created_at": "2021-03-16T16:32:46Z",
+    "pushed_at": "2026-11-22T19:54:18Z"
+  },
+  {
+    "name": "two-state-markov-chain",
+    "private": false,
+    "fork": false,
+    "html_url": "https://github.com/thewhitelisted/two-state-markov-chain",
+    "description": "basic two state markov chain simulation",
+    "language": "Rust",
+    "homepage": "",
+    "topics": [],
+    "created_at": "2025-03-09T16:56:41Z",
+    "pushed_at": "2025-03-09T19:49:10Z"
+  }
+]
