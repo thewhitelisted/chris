@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { formatDate, compareIsoDates } from './dates.js'
-import { blogPosts } from './blogData.js'
-import { projects } from './projectsData.js'
+import { handKeptProjects as projects } from './projectsData.js'
+import path from 'node:path'
+import { loadPosts } from '../build/posts.js'
+
+const blogPosts = await loadPosts(path.join(import.meta.dirname, '../posts'))
 
 describe('formatDate', () => {
   it.each([
@@ -38,7 +41,7 @@ describe('formatDate', () => {
   })
 
   it('keeps the display text the site showed before the ISO migration', () => {
-    expect(blogPosts.map((p) => formatDate(p.date))).toEqual(['18 June, 2025', '25 April, 2026'])
+    expect(blogPosts.map((p) => formatDate(p.date))).toEqual(['25 April, 2026', '18 June, 2025'])
     expect(projects.map((p) => formatDate(p.date))).toEqual([
       'April 2025', 'March 2025', 'March 2025', 'June 2025', 'July 2025', 'July 2021',
     ])

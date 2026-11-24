@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { INITIAL_SORT, nextSort, sortItems, filterItems } from './listing.js'
-import { projects } from './projectsData.js'
+import { handKeptProjects as projects } from './projectsData.js'
 
 const items = [
   { title: 'beta', date: '2025-03', type: 'Tool', tags: ['Rust'] },

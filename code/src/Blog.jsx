@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { FileText, Search } from 'lucide-react'
-import { blogPosts } from './blogData.js'
+import { blogPosts } from 'virtual:posts'
 import { formatDate } from './dates.js'
 import { useListing } from './listing.js'
 import SortHeader from './SortHeader.jsx'
