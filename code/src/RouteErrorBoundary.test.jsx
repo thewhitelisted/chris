@@ -3,6 +3,8 @@ import { Suspense, lazy } from 'react'
 import RouteErrorBoundary from './RouteErrorBoundary.jsx'
 import { mount } from './testUtils.js'
 
+const ERROR_TEXT = 'This page failed to load. Reload to try again.'
+
 function Throws({ value }) {
   throw value
 }
@@ -30,28 +32,30 @@ describe('RouteErrorBoundary', () => {
     expect(alertText()).toBeUndefined()
   })
 
-  it('shows the error message in place of a child that throws', async () => {
-    await view.render(<RouteErrorBoundary resetKey="/a"><Throws value={new Error('boom')} /></RouteErrorBoundary>)
-    expect(alertText()).toBe('Could not load this page (boom).')
-    expect(view.caught.map((e) => e.message)).toEqual(['boom'])
+  it('shows the fixed error text, not the thrown message, in place of a child that throws', async () => {
+    await view.render(<RouteErrorBoundary resetKey="/a"><Throws value={new Error('secret detail boom')} /></RouteErrorBoundary>)
+    expect(alertText()).toBe(ERROR_TEXT)
+    expect(view.container.textContent).toBe(ERROR_TEXT)
+    expect(view.container.innerHTML).not.toContain('secret detail boom')
+    expect(view.caught.map((e) => e.message)).toEqual(['secret detail boom'])
   })
 
   it.each([
-    ['null', null, 'unknown error'],
-    ['undefined', undefined, 'unknown error'],
-    ['an empty string', '', 'unknown error'],
-    ['a string', 'chunk gone', 'chunk gone'],
-    ['a plain object', { code: 42 }, 'unknown error'],
-    ['an Error with no message', new Error(''), 'unknown error'],
-  ])('contains a thrown %s and still shows the error view', async (_, value, shown) => {
+    ['null', null],
+    ['undefined', undefined],
+    ['an empty string', ''],
+    ['a string', 'chunk gone'],
+    ['a plain object', { code: 42 }],
+    ['an Error with no message', new Error('')],
+  ])('contains a thrown %s and still shows the error view', async (_, value) => {
     await view.render(<RouteErrorBoundary resetKey="/a"><Throws value={value} /></RouteErrorBoundary>)
-    expect(alertText()).toBe(`Could not load this page (${shown}).`)
+    expect(alertText()).toBe(ERROR_TEXT)
   })
 
   it('keeps showing the error while the reset key is unchanged', async () => {
     await view.render(<RouteErrorBoundary resetKey="/a"><Throws value={new Error('boom')} /></RouteErrorBoundary>)
     await view.render(<RouteErrorBoundary resetKey="/a"><Fine /></RouteErrorBoundary>)
-    expect(alertText()).toBe('Could not load this page (boom).')
+    expect(alertText()).toBe(ERROR_TEXT)
   })
 
   it('recovers when the reset key changes', async () => {
@@ -68,6 +72,6 @@ describe('RouteErrorBoundary', () => {
         <Suspense fallback={<p>loading</p>}><Broken /></Suspense>
       </RouteErrorBoundary>,
     )
-    expect(alertText()).toBe('Could not load this page (Failed to fetch dynamically imported module).')
+    expect(alertText()).toBe(ERROR_TEXT)
   })
 })

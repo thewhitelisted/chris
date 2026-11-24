@@ -96,7 +96,7 @@ describe('Layout route loading', () => {
     await clickNav('/projects')
     await settle(() => chunks.projects.reject(new TypeError('Failed to fetch dynamically imported module')))
 
-    expect(alertText()).toBe('Could not load this page (Failed to fetch dynamically imported module).')
+    expect(alertText()).toBe('This page failed to load. Reload to try again.')
     expect(paneText()).not.toContain('home page')
     expect(navLinks()).toBe(7)
     expect(activeNav()).toBe('projects')
@@ -139,6 +139,6 @@ describe('Layout route loading', () => {
     await clickNav('/')
     await clickNav('/projects')
 
-    expect(alertText()).toBe('Could not load this page (Failed to fetch dynamically imported module).')
+    expect(alertText()).toBe('This page failed to load. Reload to try again.')
   })
 })
