@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Loading from './Loading.jsx'
+import { describeError } from './describeError.js'
 
 const components = {
   h1: ({children}) => <h1 className="post-title">{children}</h1>,
@@ -36,10 +37,10 @@ function MarkdownPage({ url }) {
     const controller = new AbortController()
     fetchMarkdown(url, controller.signal).then(
       (text) => {
-        if (!controller.signal.aborted) setResult({ url, text })
+        if (!controller.signal.aborted) setResult({ url, status: 'success', text })
       },
       (err) => {
-        if (!controller.signal.aborted) setResult({ url, error: err.message })
+        if (!controller.signal.aborted) setResult({ url, status: 'error', message: describeError(err) })
       },
     )
     return () => controller.abort()
@@ -49,10 +50,10 @@ function MarkdownPage({ url }) {
     return <Loading />
   }
 
-  if (result.error) {
+  if (result.status === 'error') {
     return (
       <div className="content-page">
-        <p className="post-paragraph" role="alert">Could not load {url} ({result.error}).</p>
+        <p className="post-paragraph" role="alert">Could not load {url} ({result.message}).</p>
       </div>
     )
   }
