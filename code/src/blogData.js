@@ -1,21 +1,14 @@
-// Blog posts metadata and content loader
 export const blogPosts = [
   {
     title: "how i deal with having adhd",
-    date: "18 June, 2025",
+    date: "2025-06-18",
     description: "handing adhd as a double degree student pursing finance",
     slug: "handling-adhd"
   },
+  {
+    title: "my first work experience in finance",
+    date: "2026-04-25",
+    description: "I had the opportunity to work at one of Canada's biggest pension funds this winter, here's what I learnt",
+    slug: "first-work-experience"
+  },
 ]
-
-// Function to load markdown content
-export const loadMarkdownContent = async (slug) => {
-  try {
-    // Use dynamic imports to load markdown as raw text
-    const markdownModule = await import(`../public/posts/${slug}.md?raw`)
-    return markdownModule.default
-  } catch (error) {
-    console.error(`Failed to load markdown for ${slug}:`, error)
-    throw error
-  }
-}

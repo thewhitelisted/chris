@@ -1,56 +1,30 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FileText, Search, FolderOpen } from 'lucide-react'
+import { Search, FolderOpen } from 'lucide-react'
 import { projects } from './projectsData.js'
+import { formatDate } from './dates.js'
+import { useListing } from './listing.js'
+import SortHeader from './SortHeader.jsx'
 import StickyNote from './StickyNote.jsx'
-import './Projects.css'
+
+const COLUMNS = [
+  { key: 'name', label: 'Name' },
+  { key: 'date', label: 'Date Created' },
+  { key: 'type', label: 'Type' },
+]
+
+const searchableText = (project) => [project.title, project.description, ...project.technologies]
 
 function Projects() {
-  const [filter, setFilter] = useState('')
-  const [sortKey, setSortKey] = useState('date') // 'name' | 'date' | 'type'
-  const [sortDir, setSortDir] = useState('desc') // 'asc' | 'desc'
+  const { query, setQuery, sort, toggleSort, visible } = useListing(projects, searchableText)
   const [openNotes, setOpenNotes] = useState([])
   const [nextZIndex, setNextZIndex] = useState(1000)
 
-  const handleSort = (key) => {
-    if (sortKey === key) {
-      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortKey(key)
-      setSortDir(key === 'date' ? 'desc' : 'asc')
-    }
-  }
-
-  const visibleProjects = (() => {
-    const filtered = projects.filter(p =>
-      p.title.toLowerCase().includes(filter.toLowerCase()) ||
-      p.description.toLowerCase().includes(filter.toLowerCase()) ||
-      p.technologies.some(tech => tech.toLowerCase().includes(filter.toLowerCase()))
-    )
-    const sorted = filtered.slice().sort((a, b) => {
-      if (sortKey === 'name') {
-        const cmp = a.title.localeCompare(b.title)
-        return sortDir === 'asc' ? cmp : -cmp
-      } else if (sortKey === 'type') {
-        const cmp = a.type.localeCompare(b.type)
-        return sortDir === 'asc' ? cmp : -cmp
-      } else {
-        const da = new Date(a.date)
-        const db = new Date(b.date)
-        const cmp = da - db
-        return sortDir === 'asc' ? cmp : -cmp
-      }
-    })
-    return sorted
-  })()
-
   const openStickyNote = (project) => {
-    // Don't open if already open
     if (openNotes.find(note => note.project.slug === project.slug)) {
       return
     }
 
-    // Calculate random initial position
     const x = Math.random() * (window.innerWidth - 350)
     const y = Math.random() * (window.innerHeight - 450) + 100
 
@@ -70,8 +44,8 @@ function Projects() {
   }
 
   const bringToFront = (noteId) => {
-    setOpenNotes(prev => prev.map(note => 
-      note.id === noteId 
+    setOpenNotes(prev => prev.map(note =>
+      note.id === noteId
         ? { ...note, zIndex: nextZIndex }
         : note
     ))
@@ -96,35 +70,22 @@ function Projects() {
             <input
               className="toolbar-search"
               placeholder="Search projects"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
             />
           </div>
         </div>
         <div className="explorer-split">
           <section className="explorer-content">
-            <div className="list-header">
-              <button className={`header-button${sortKey==='name' ? ' active' : ''}`} onClick={()=>handleSort('name')}>
-                <span>Name</span>
-                <span className="sort-caret">{sortKey==='name' ? (sortDir==='asc' ? '▲' : '▼') : ''}</span>
-              </button>
-              <button className={`header-button${sortKey==='date' ? ' active' : ''}`} onClick={()=>handleSort('date')}>
-                <span>Date Created</span>
-                <span className="sort-caret">{sortKey==='date' ? (sortDir==='asc' ? '▲' : '▼') : ''}</span>
-              </button>
-              <button className={`header-button${sortKey==='type' ? ' active' : ''}`} onClick={()=>handleSort('type')}>
-                <span>Type</span>
-                <span className="sort-caret">{sortKey==='type' ? (sortDir==='asc' ? '▲' : '▼') : ''}</span>
-              </button>
-            </div>
+            <SortHeader columns={COLUMNS} sort={sort} onSort={toggleSort} />
             <div className="list-body">
-              {visibleProjects.map((project) => (
+              {visible.map((project) => (
                 <button key={project.slug} className="row" onClick={()=>openStickyNote(project)}>
                   <div className="col name">
                     <FolderOpen className="file-icon" size={16} style={{ color: project.color }} />
                     <span className="file-name">{project.title}</span>
                   </div>
-                  <div className="col date">{project.date}</div>
+                  <div className="col date">{formatDate(project.date)}</div>
                   <div className="col type">
                     <span className="type-badge">
                       {project.type}
@@ -154,6 +115,3 @@ function Projects() {
 }
 
 export default Projects
-
-
-

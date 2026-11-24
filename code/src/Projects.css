@@ -214,7 +214,6 @@
   max-width: 110px;
 }
 
-/* Sticky Notes */
 .sticky-note {
   width: 300px;
   min-height: 380px;
@@ -283,19 +282,6 @@
   opacity: 0.7;
   font-family: 'DM Mono', monospace;
   color: white;
-}
-
-.sticky-note-status {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  color: white;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  width: fit-content;
-  font-family: 'DM Mono', monospace;
 }
 
 .sticky-note-description {
@@ -367,7 +353,6 @@
     min-width: 140px;
   }
 
-  /* Hide column headers on mobile — replaced by stacked rows */
   .list-header {
     display: none;
   }
@@ -387,7 +372,6 @@
     margin-bottom: 2px;
   }
 
-  /* Date + type appear side-by-side on the second line */
   .col.date {
     padding-left: 26px;
     font-size: 11px;

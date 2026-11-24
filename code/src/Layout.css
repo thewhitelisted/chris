@@ -107,11 +107,6 @@ html, body {
   color: #ffffff;
 }
 
-.nav-item.disabled {
-  color: var(--text-dim);
-  cursor: default;
-}
-
 .nav-icon {
   color: currentColor;
   flex-shrink: 0;
@@ -184,7 +179,6 @@ html, body {
     margin: 0;
   }
 
-  /* Sidebar element takes no flex space — its children are position:fixed */
   .sidebar {
     flex: 0 0 0;
     width: 0;

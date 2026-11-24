@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import './BlogPost.css'
+import Loading from './Loading.jsx'
+import { describeError } from './describeError.js'
 
 const components = {
   h1: ({children}) => <h1 className="post-title">{children}</h1>,
@@ -20,24 +21,42 @@ const components = {
   strong: ({children}) => <strong className="post-bold">{children}</strong>,
 }
 
-function Music() {
-  const [content, setContent] = useState('')
-  const [loading, setLoading] = useState(true)
+async function fetchMarkdown(url, signal) {
+  const res = await fetch(url, { signal })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  if ((res.headers.get('content-type') ?? '').includes('text/html')) {
+    throw new Error('not found')
+  }
+  return res.text()
+}
+
+function MarkdownPage({ url }) {
+  const [result, setResult] = useState(null)
 
   useEffect(() => {
-    const paths = ['/papers/music.md', './papers/music.md', '/music.md']
-    const tryLoad = async () => {
-      for (const path of paths) {
-        try {
-          const res = await fetch(path)
-          if (res.ok) { setContent(await res.text()); return }
-        } catch {}
-      }
-    }
-    tryLoad().finally(() => setLoading(false))
-  }, [])
+    const controller = new AbortController()
+    fetchMarkdown(url, controller.signal).then(
+      (text) => {
+        if (!controller.signal.aborted) setResult({ url, status: 'success', text })
+      },
+      (err) => {
+        if (!controller.signal.aborted) setResult({ url, status: 'error', message: describeError(err) })
+      },
+    )
+    return () => controller.abort()
+  }, [url])
 
-  if (loading) return <div className="content-page"><p className="content-loading">Loading...</p></div>
+  if (result?.url !== url) {
+    return <Loading />
+  }
+
+  if (result.status === 'error') {
+    return (
+      <div className="content-page">
+        <p className="post-paragraph" role="alert">Could not load {url} ({result.message}).</p>
+      </div>
+    )
+  }
 
   return (
     <motion.div
@@ -47,10 +66,10 @@ function Music() {
       transition={{ duration: 0.4 }}
     >
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-        {content}
+        {result.text}
       </ReactMarkdown>
     </motion.div>
   )
 }
 
-export default Music
+export default MarkdownPage
