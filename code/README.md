@@ -46,15 +46,14 @@ A clean, minimalist personal portfolio website built with React and Vite, featur
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
-- `npm run deploy` - Deploy to GitHub Pages
+- `npm run lint` - Lint with ESLint
+- `npm test` - Run the Vitest suite
 
-## Deployment to GitHub Pages
+## Deployment
 
-1. Update the `base` path in `vite.config.js` to match your repository name
-2. Run the deployment command:
-   ```bash
-   npm run deploy
-   ```
+`.github/workflows/deploy.yml` runs lint, tests and build on every pull request and push. On a push to `master` (or a manual run on `master`) it then uploads `code/dist` and deploys it to GitHub Pages. The repository's Pages source must be set to "GitHub Actions". Build output is not committed; `code/dist` is gitignored.
+
+The custom domain is configured in the repository's Pages settings; `public/CNAME` ships the same domain in the build.
 
 ## Customization
 
