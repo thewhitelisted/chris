@@ -3,9 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
-import About from './About.jsx'
-import Music from './Music.jsx'
-import Hobbies from './Hobbies.jsx'
+import MarkdownPage from './MarkdownPage.jsx'
 import Blog from './Blog.jsx'
 import BlogPost from './BlogPost.jsx'
 import Layout from './Layout.jsx'
@@ -17,9 +15,9 @@ createRoot(document.getElementById('root')).render(
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<App />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/music" element={<Music />} />
-          <Route path="/hobbies" element={<Hobbies />} />
+          <Route path="/about" element={<MarkdownPage url="/papers/about.md" />} />
+          <Route path="/music" element={<MarkdownPage url="/papers/music.md" />} />
+          <Route path="/hobbies" element={<MarkdownPage url="/papers/hobbies.md" />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
