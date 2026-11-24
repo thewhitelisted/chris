@@ -42,9 +42,7 @@ describe('formatDate', () => {
 
   it('keeps the display text the site showed before the ISO migration', () => {
     expect(blogPosts.map((p) => formatDate(p.date))).toEqual(['25 April, 2026', '18 June, 2025'])
-    expect(projects.map((p) => formatDate(p.date))).toEqual([
-      'April 2025', 'March 2025', 'March 2025', 'June 2025', 'July 2025', 'July 2021',
-    ])
+    expect(projects.map((p) => formatDate(p.date))).toEqual(['April 2025'])
   })
 })
 

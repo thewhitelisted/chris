@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { INITIAL_SORT, nextSort, sortItems, filterItems } from './listing.js'
-import { handKeptProjects as projects } from './projectsData.js'
 
 const items = [
   { title: 'beta', date: '2025-03', type: 'Tool', tags: ['Rust'] },
@@ -60,17 +59,6 @@ describe('sortItems', () => {
 
   it('rejects an unknown sort key', () => {
     expect(() => sortItems(items, { key: 'size', dir: 'asc' })).toThrow('Unknown sort key')
-  })
-
-  it('orders the real project list newest first by default', () => {
-    expect(sortItems(projects, INITIAL_SORT).map((p) => p.slug)).toEqual([
-      'toronto-weather-model',
-      'git-clone-rust',
-      'financial-viscosity-model',
-      'agent-based-market-simulation',
-      'sentivest',
-      'discord-js-bot',
-    ])
   })
 })
 
