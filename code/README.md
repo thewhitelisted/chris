@@ -53,7 +53,7 @@ A clean, minimalist personal portfolio website built with React and Vite, featur
 
 Content is assembled at build time by `build/content-plugin.js`. Any problem below stops the build with a message naming the file or repo.
 
-- **Blog posts**: one file per post in `posts/<slug>.md`. The file name is the URL slug (lowercase words joined by hyphens). Each file starts with frontmatter holding exactly these fields:
+- **Blog posts**: one file per post in `posts/<slug>.md`. The file name is the URL slug (lowercase words joined by hyphens; `index` is reserved). Each file starts with frontmatter holding exactly these fields:
 
   ```markdown
   ---
@@ -65,10 +65,10 @@ Content is assembled at build time by `build/content-plugin.js`. Any problem bel
   # The post body
   ```
 
-  Quote a value that contains `: ` or looks like a number, e.g. `title: "finance: year one"`.
+  Quote a value that contains `: `, ` #` or looks like a number, e.g. `title: "finance: year one"`. YAML comments are rejected because they would silently cut a value short. While `npm run dev` runs, adding, editing or deleting a post takes effect on the next request; a broken post shows its error in the terminal and the browser overlay.
 - **Projects**: public repos of `thewhitelisted` that carry the GitHub topic `portfolio` are fetched from the GitHub API and listed first. Each tagged repo needs a description, and its homepage must be empty or an https URL. The repo's language and other topics become its tags, and its creation month its date. Projects that are not public repos live in `src/projectsData.js`; their links must be https URLs or files that exist in `public/`.
 - If no repo carries the `portfolio` topic, the build fails rather than ship a projects page without them. Set `ALLOW_NO_GITHUB_PROJECTS=1` to build anyway (CI does this for pull requests only).
-- The GitHub API is called without a token locally (60 requests an hour) and with the workflow's `GITHUB_TOKEN` in CI.
+- Both `npm run dev` and `npm run build` call the GitHub API, so they need network access to api.github.com. There is no offline mode: `ALLOW_NO_GITHUB_PROJECTS=1` only permits zero tagged repos, it does not skip the request. The API is called without a token locally (60 requests an hour) and with the workflow's `GITHUB_TOKEN` in CI.
 - The build also writes `rss.xml` and a static HTML page per route (`about.html` and `about/index.html`, `blog/<slug>.html` and `blog/<slug>/index.html`, ...) carrying that page's title, description, Open Graph and Twitter tags, so link previews work without JavaScript.
 
 ## Deployment
