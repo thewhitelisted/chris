@@ -77,6 +77,18 @@ describe('Layout route loading', () => {
     expect(activeNav()).toBe('projects')
   })
 
+  it('switches straight to an already-loaded route', async () => {
+    await renderApp()
+    await settle(() => chunks.home.resolve(page('home page')))
+    await clickNav('/projects')
+    await settle(() => chunks.projects.resolve(page('projects page')))
+
+    await clickNav('/')
+    expect(isLoading()).toBe(false)
+    expect(paneText()).toBe('home page')
+    expect(activeNav()).toBe('home')
+  })
+
   it('goes from the previous page straight to the error view when the chunk fails, sidebar intact', async () => {
     await renderApp()
     await settle(() => chunks.home.resolve(page('home page')))
