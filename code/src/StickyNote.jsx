@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ExternalLink, Github, X, FileText } from 'lucide-react'
+import { formatDate } from './dates.js'
 
 function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront }) {
   const [position, setPosition] = useState(initialPosition)
@@ -30,7 +31,6 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
       const newX = e.clientX - dragOffset.x
       const newY = e.clientY - dragOffset.y
       
-      // Keep within viewport bounds
       const maxX = window.innerWidth - 320
       const maxY = window.innerHeight - 400
       
@@ -54,15 +54,6 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
       document.removeEventListener('mouseup', handleMouseUp)
     }
   }, [isDragging, dragOffset])
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Completed': return '#10b981'
-      case 'In Progress': return '#f59e0b'
-      case 'Planning': return '#6b7280'
-      default: return '#6b7280'
-    }
-  }
 
   return (
     <motion.div
@@ -99,14 +90,7 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
       
       <div className="sticky-note-content">
         <h3 className="sticky-note-title">{project.title}</h3>
-        <div className="sticky-note-date">{project.date}</div>
-        
-        <div 
-          className="sticky-note-status"
-          style={{ backgroundColor: getStatusColor(project.status) }}
-        >
-          {project.status}
-        </div>
+        <div className="sticky-note-date">{formatDate(project.date)}</div>
         
         <p className="sticky-note-description">{project.description}</p>
         

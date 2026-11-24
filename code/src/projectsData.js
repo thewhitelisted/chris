@@ -1,8 +1,7 @@
-// Projects metadata
 export const projects = [
   {
     title: "financial viscosity model",
-    date: "April 2025",
+    date: "2025-04",
     description: "In the span of a week I sought to create a model of market risk using spring differential equations as the basis. Posting my research on social media netted me over 25000 views.",
     technologies: ["Mathematics", "Differential Equations", "Financial Modeling", "Research"],
     type: "Research",
@@ -12,7 +11,7 @@ export const projects = [
   },
   {
     title: "agent-based market simulation tool",
-    date: "March 2025",
+    date: "2025-03",
     description: "I created software that functionally models a CLOB and agents that can trade on it. Furthermore, you can design your own agents that emulate desired behaviour.",
     technologies: ["Python", "Market Simulation", "CLOB", "Agent-Based Modeling"],
     type: "Simulation Tool",
@@ -22,7 +21,7 @@ export const projects = [
   },
   {
     title: "sentivest",
-    date: "March 2025",
+    date: "2025-03",
     description: "Created a tool that performs sentiment analysis on a set of stocks, and subsequently optimizes portfolio weighings based on sentiment using the black-litterman model",
     technologies: ["Python", "Sentiment Analysis", "Black-Litterman Model", "Portfolio Optimization"],
     type: "Analysis Tool",
@@ -32,7 +31,7 @@ export const projects = [
   },
   {
     title: "git clone in rust",
-    date: "June 2025",
+    date: "2025-06",
     description: "Wrote version control software in rust. Has trivial features and mimicks the backbones of git.",
     technologies: ["Rust", "Version Control", "Systems Programming", "Git"],
     type: "System Tool",
@@ -42,7 +41,7 @@ export const projects = [
   },
   {
     title: "trivial toronto weather model",
-    date: "July 2025",
+    date: "2025-07",
     description: "Made a ridge regression model of the temperature high/low in toronto on any given day.",
     technologies: ["Python", "Ridge Regression", "Machine Learning", "Weather Prediction"],
     type: "ML Model",
@@ -52,7 +51,7 @@ export const projects = [
   },
   {
     title: "discord js bot",
-    date: "July 2021",
+    date: "2021-07",
     description: "Created a discord bot for a server with 1000+ members. Aided administrators in verification and provided trivial functions for members to have fun.",
     technologies: ["JavaScript", "Discord.js", "Node.js", "Bot Development"],
     type: "Bot",

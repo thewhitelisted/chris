@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { copyFileSync, existsSync, unlinkSync } from 'fs'
+import { existsSync, unlinkSync } from 'fs'
 import { resolve } from 'path'
 
 // Custom plugin to handle markdown files
