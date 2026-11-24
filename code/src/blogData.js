@@ -5,4 +5,10 @@ export const blogPosts = [
     description: "handing adhd as a double degree student pursing finance",
     slug: "handling-adhd"
   },
+  {
+    title: "my first work experience in finance",
+    date: "2026-04-25",
+    description: "I had the opportunity to work at one of Canada's biggest pension funds this winter, here's what I learnt",
+    slug: "first-work-experience"
+  },
 ]
