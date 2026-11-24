@@ -49,9 +49,31 @@ A clean, minimalist personal portfolio website built with React and Vite, featur
 - `npm run lint` - Lint with ESLint
 - `npm test` - Run the Vitest suite
 
+## Content
+
+Content is assembled at build time by `build/content-plugin.js`. Any problem below stops the build with a message naming the file or repo.
+
+- **Blog posts**: one file per post in `posts/<slug>.md`. The file name is the URL slug (lowercase words joined by hyphens). Each file starts with frontmatter holding exactly these fields:
+
+  ```markdown
+  ---
+  title: my post title
+  date: 2026-04-25
+  description: one sentence shown in the RSS feed and link previews
+  ---
+
+  # The post body
+  ```
+
+  Quote a value that contains `: ` or looks like a number, e.g. `title: "finance: year one"`.
+- **Projects**: public repos of `thewhitelisted` that carry the GitHub topic `portfolio` are fetched from the GitHub API and listed first. Each tagged repo needs a description, and its homepage must be empty or an https URL. The repo's language and other topics become its tags, and its creation month its date. Projects that are not public repos live in `src/projectsData.js`; their links must be https URLs or files that exist in `public/`.
+- If no repo carries the `portfolio` topic, the build fails rather than ship a projects page without them. Set `ALLOW_NO_GITHUB_PROJECTS=1` to build anyway (CI does this for pull requests only).
+- The GitHub API is called without a token locally (60 requests an hour) and with the workflow's `GITHUB_TOKEN` in CI.
+- The build also writes `rss.xml` and a static HTML page per route (`about.html` and `about/index.html`, `blog/<slug>.html` and `blog/<slug>/index.html`, ...) carrying that page's title, description, Open Graph and Twitter tags, so link previews work without JavaScript.
+
 ## Deployment
 
-`.github/workflows/deploy.yml` runs lint, tests and build on every pull request and push. On a push to `master` (or a manual run on `master`) it then uploads `code/dist` and deploys it to GitHub Pages. The repository's Pages source must be set to "GitHub Actions". Build output is not committed; `code/dist` is gitignored.
+`.github/workflows/deploy.yml` runs lint, tests and build on every pull request and push, and nightly at 07:23 UTC so the projects list follows GitHub. On a push to `master`, the nightly run, or a manual run on `master`, it then uploads `code/dist` and deploys it to GitHub Pages. The repository's Pages source must be set to "GitHub Actions". Build output is not committed; `code/dist` is gitignored.
 
 The custom domain is configured in the repository's Pages settings; `public/CNAME` ships the same domain in the build.
 
