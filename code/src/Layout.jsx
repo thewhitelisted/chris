@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { Home, User, FolderOpen, BookOpen, FileText, Music, Lightbulb, Menu, X } from 'lucide-react'
 import Loading from './Loading.jsx'
+import RouteErrorBoundary from './RouteErrorBoundary.jsx'
 
 function Layout() {
   const location = useLocation()
@@ -103,9 +104,11 @@ function Layout() {
         <main className="content">
           <div className="sidebar-spacer" />
           <div className={`content-pane${isHome ? ' content-pane-home' : ''}`}>
-            <Suspense fallback={<Loading />}>
-              <Outlet />
-            </Suspense>
+            <RouteErrorBoundary resetKey={location.pathname}>
+              <Suspense fallback={<Loading />}>
+                <Outlet />
+              </Suspense>
+            </RouteErrorBoundary>
           </div>
         </main>
       </div>
