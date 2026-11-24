@@ -1,11 +1,13 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { parse as parseYaml } from 'yaml'
+import { parseDocument, visit } from 'yaml'
 import { formatDate } from '../src/dates.js'
+import { invalidXmlChar } from './text.js'
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const FULL_DATE = /^\d{4}-\d{2}-\d{2}$/
 const FIELDS = ['title', 'date', 'description']
+const RESERVED_SLUGS = ['index']
 const FRONTMATTER = /^---\n([\s\S]*?)\n---(?:\n|$)/
 
 export class ContentError extends Error {
@@ -20,17 +22,18 @@ export function parsePost(file, source) {
   const slug = path.basename(file, '.md')
   if (path.extname(file) !== '.md') throw new ContentError(file, 'posts must be .md files')
   if (!SLUG.test(slug)) throw new ContentError(file, `file name must be a lowercase-hyphenated slug like "my-post.md"`)
+  if (RESERVED_SLUGS.includes(slug)) throw new ContentError(file, `"${slug}" is reserved; rename the file`)
 
   const text = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n')
   const match = FRONTMATTER.exec(text)
   if (!match) throw new ContentError(file, 'must start with a "---" frontmatter block closed by "---"')
 
-  let data
-  try {
-    data = parseYaml(match[1])
-  } catch (err) {
-    throw new ContentError(file, `frontmatter is not valid YAML: ${err.message}`)
+  const doc = parseDocument(match[1])
+  if (doc.errors.length) throw new ContentError(file, `frontmatter is not valid YAML: ${doc.errors[0].message}`)
+  if (hasComment(doc)) {
+    throw new ContentError(file, 'frontmatter contains a YAML comment (" #"); quote the value if the # is part of it, e.g. title: "C# is #1"')
   }
+  const data = doc.toJS()
   if (data === null || typeof data !== 'object' || Array.isArray(data)) {
     throw new ContentError(file, `frontmatter must be key: value pairs (${FIELDS.join(', ')})`)
   }
@@ -42,6 +45,8 @@ export function parsePost(file, source) {
     if (typeof data[field] !== 'string' || data[field].trim() === '') {
       throw new ContentError(file, `frontmatter field "${field}" must be a non-empty string (quote it if it looks like a number)`)
     }
+    const bad = invalidXmlChar(data[field])
+    if (bad) throw new ContentError(file, `frontmatter field "${field}" contains the control character ${bad}`)
   }
   if (!FULL_DATE.test(data.date)) throw new ContentError(file, `date must be YYYY-MM-DD, got ${JSON.stringify(data.date)}`)
   try {
@@ -54,6 +59,14 @@ export function parsePost(file, source) {
   if (body.trim() === '') throw new ContentError(file, 'post body is empty')
 
   return { file, slug, title: data.title, date: data.date, description: data.description, body }
+}
+
+function hasComment(doc) {
+  let found = Boolean(doc.comment || doc.commentBefore)
+  visit(doc, (_key, node) => {
+    if (node?.comment || node?.commentBefore) found = true
+  })
+  return found
 }
 
 export function checkUniqueSlugs(posts) {

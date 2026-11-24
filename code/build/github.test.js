@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fetchOwnerRepos, selectPortfolioProjects, repoToProject, validateRepo, GitHubDataError } from './github.js'
 
-const recorded = JSON.parse(readFileSync(path.join(import.meta.dirname, 'fixtures/users-repos-2026-11-24.json'), 'utf8'))
+const fixture = (name) => JSON.parse(readFileSync(path.join(import.meta.dirname, 'fixtures', name), 'utf8'))
+const recorded = fixture('users-repos-2026-11-24.json')
+const recordedTagged = fixture('users-repos-2026-11-24-tagged.json')
 const TOPIC = 'portfolio'
 
 function tagged(names, extraTopics = {}) {
@@ -22,13 +24,13 @@ function jsonResponse(body, status = 200) {
 }
 
 describe('selectPortfolioProjects with the recorded response', () => {
-  it('finds nothing today, because no repo has the topic yet', () => {
+  it('finds nothing in the response recorded before any repo was tagged', () => {
     expect(selectPortfolioProjects(recorded, TOPIC)).toEqual([])
   })
 
-  it('maps the three repos the owner will tag', () => {
-    const projects = selectPortfolioProjects(tagged(['crowdbook', 'Pathos', 'baskets']), TOPIC)
-    expect(projects.map((p) => p.title)).toEqual(['baskets', 'crowdbook', 'Pathos'])
+  it('maps crowdbook and Pathos from the response recorded after the owner tagged them', () => {
+    const projects = selectPortfolioProjects(recordedTagged, TOPIC)
+    expect(projects.map((p) => p.title)).toEqual(['crowdbook', 'Pathos'])
     const crowdbook = projects.find((p) => p.title === 'crowdbook')
     expect(crowdbook).toEqual({
       slug: 'crowdbook',
@@ -42,8 +44,28 @@ describe('selectPortfolioProjects with the recorded response', () => {
     })
     expect(crowdbook.description).toMatch(/^A deterministic, high-performance agent-based limit order book simulator/)
     expect(crowdbook).not.toHaveProperty('live')
-    expect(projects.find((p) => p.title === 'Pathos')).toMatchObject({ slug: 'pathos', type: 'Rust', date: '2026-10' })
-    expect(projects.find((p) => p.title === 'baskets')).toMatchObject({ type: 'TypeScript', date: '2026-11' })
+    expect(projects.find((p) => p.title === 'Pathos')).toMatchObject({
+      slug: 'pathos',
+      type: 'Rust',
+      date: '2026-10',
+      technologies: ['Rust'],
+      github: 'https://github.com/thewhitelisted/Pathos',
+    })
+    expect(projects.find((p) => p.title === 'Pathos').description).toMatch(/^A Rust-native, sentiment-driven portfolio optimizer/)
+  })
+
+  it('maps baskets too if it is ever tagged', () => {
+    const [project] = selectPortfolioProjects(tagged(['baskets']), TOPIC)
+    expect(project).toMatchObject({ title: 'baskets', type: 'TypeScript', date: '2026-11' })
+  })
+
+  it.each([
+    ['description', 'bell\u0007'],
+    ['name', 'x\u0000'],
+  ])('fails on a tagged repo with a control character in %s', (field, value) => {
+    const repos = tagged(['crowdbook'])
+    byName(repos, 'crowdbook')[field] = value
+    expect(() => selectPortfolioProjects(repos, TOPIC)).toThrow(/contains the control character U\+000[07]/)
   })
 
   it('builds technologies from language then topics, minus the portfolio topic, without case duplicates', () => {
@@ -176,6 +198,33 @@ describe('fetchOwnerRepos', () => {
     const { calls, fetchImpl } = recordingFetch([jsonResponse(full), jsonResponse([])])
     expect(await fetchOwnerRepos({ user: 'u', fetchImpl })).toHaveLength(100)
     expect(calls).toHaveLength(2)
+  })
+
+  it('aborts a request that outlives the timeout', async () => {
+    let aborted = false
+    const fetchImpl = (_url, init) => new Promise((_resolve, reject) => {
+      init.signal.addEventListener('abort', () => {
+        aborted = true
+        reject(init.signal.reason)
+      })
+    })
+    const started = Date.now()
+    const error = await fetchOwnerRepos({ user: 'u', fetchImpl, timeoutMs: 50 }).catch((err) => err)
+    expect(aborted).toBe(true)
+    expect(Date.now() - started).toBeLessThan(2000)
+    expect(error).toBeInstanceOf(GitHubDataError)
+    expect(error.message).toMatch(/request to .* failed: .*(timed out|aborted)/i)
+  })
+
+  it('uses a 20 second timeout by default', async () => {
+    let signal
+    const fetchImpl = async (_url, init) => {
+      signal = init.signal
+      return jsonResponse([])
+    }
+    await fetchOwnerRepos({ user: 'u', fetchImpl })
+    expect(signal).toBeInstanceOf(AbortSignal)
+    expect(signal.aborted).toBe(false)
   })
 
   it('stops with an error instead of truncating after 10 full pages', async () => {

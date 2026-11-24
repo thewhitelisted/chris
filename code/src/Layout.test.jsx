@@ -27,6 +27,8 @@ function renderApp() {
             <Route path="/" element={<Home />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<p className="test-page">post</p>} />
+            <Route path="/about" element={<p className="test-page">about</p>} />
           </Route>
         </Routes>
       </SiteRouter>
@@ -146,5 +148,35 @@ describe('Layout route loading', () => {
     await clickNav('/projects')
 
     expect(alertText()).toBe('This page failed to load. Reload to try again.')
+  })
+})
+
+describe('Layout document title', () => {
+  it('follows in-app navigation using the same titles as the static pages', async () => {
+    window.history.replaceState(null, '', '/blog/handling-adhd')
+    await renderApp()
+    expect(document.title).toBe('how i deal with having adhd')
+
+    await clickNav('/projects')
+    expect(document.title).toBe('Projects · Christopher Lee')
+
+    await clickNav('/about')
+    expect(document.title).toBe('About · Christopher Lee')
+
+    await clickNav('/')
+    expect(document.title).toBe('Christopher Lee')
+  })
+
+  it('keeps special characters in post titles literal', async () => {
+    window.history.replaceState(null, '', '/blog/r-and-d')
+    await renderApp()
+    expect(document.title).toBe('R&D <notes>')
+  })
+
+  it('falls back to the site name for an unknown post', async () => {
+    document.title = 'stale'
+    window.history.replaceState(null, '', '/blog/no-such-post')
+    await renderApp()
+    expect(document.title).toBe('Christopher Lee')
   })
 })

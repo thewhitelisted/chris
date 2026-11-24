@@ -71,6 +71,15 @@ describe('parsePost', () => {
     ['scalar frontmatter', frontmatter(['just text']), /must be key: value pairs/],
     ['empty frontmatter', '---\n\n---\nbody\n', /must be key: value pairs/],
     ['empty body', frontmatter(['title: t', 'date: 2025-01-01', 'description: d'], '\n  \n'), /post body is empty/],
+    ['an unquoted " #" that YAML would cut off', frontmatter(['title: C# is #1', 'date: 2025-01-01', 'description: d']), /contains a YAML comment/],
+    ['a trailing comment', frontmatter(['title: t', 'date: 2025-01-01', 'description: d # note']), /contains a YAML comment/],
+    ['a comment after the date', frontmatter(['title: t', 'date: 2025-01-01 # c', 'description: d']), /contains a YAML comment/],
+    ['a full-line comment first', frontmatter(['# draft', 'title: t', 'date: 2025-01-01', 'description: d']), /contains a YAML comment/],
+    ['a full-line comment last', frontmatter(['title: t', 'date: 2025-01-01', 'description: d', '# end']), /contains a YAML comment/],
+    ['a control character in the title', frontmatter(['title: "a\\u0007b"', 'date: 2025-01-01', 'description: d']), /"title" contains the control character U\+0007/],
+    ['a NUL in the description', frontmatter(['title: t', 'date: 2025-01-01', 'description: "x\\0y"']), /"description" contains the control character U\+0000/],
+    ['a lone surrogate', frontmatter(['title: "a\\uD800b"', 'date: 2025-01-01', 'description: d']), /control character U\+D800/],
+    ['U+FFFF', frontmatter(['title: "a\\uFFFFb"', 'date: 2025-01-01', 'description: d']), /control character U\+FFFF/],
   ])('rejects %s, naming the file', (_name, source, message) => {
     let error
     try {
@@ -85,6 +94,22 @@ describe('parsePost', () => {
 
   it.each(['Hello.md', 'my post.md', 'a_b.md', '-a.md', 'a--b.md', 'a.markdown', 'a.md.txt'])('rejects the file name %s', (name) => {
     expect(() => parsePost(name, good)).toThrow(ContentError)
+  })
+
+  it('rejects the reserved slug "index", which would replace the blog listing page', () => {
+    expect(() => parsePost('posts/index.md', good)).toThrow('posts/index.md: "index" is reserved; rename the file')
+    expect(parsePost('posts/indexes.md', good).slug).toBe('indexes')
+  })
+
+  it('accepts # inside a quoted value or without a preceding space', () => {
+    expect(parsePost('a.md', frontmatter(['title: "C# is #1"', 'date: 2025-01-01', 'description: a#b'])).title).toBe('C# is #1')
+    expect(parsePost('a.md', frontmatter(['title: C#', 'date: 2025-01-01', 'description: a#b'])).description).toBe('a#b')
+  })
+
+  it('allows tabs and newlines in values', () => {
+    const post = parsePost('a.md', frontmatter(['title: "a\\tb"', 'date: 2025-01-01', 'description: |', '  line one', '  line two']))
+    expect(post.title).toBe('a\tb')
+    expect(post.description).toBe('line one\nline two\n')
   })
 })
 

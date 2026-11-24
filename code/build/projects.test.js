@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import path from 'node:path'
-import { checkLink, validateHandKept, mergeProjects } from './projects.js'
+import { checkLink, validateHandKept, mergeProjects, allowNoGitHubProjects } from './projects.js'
 import { handKeptProjects } from '../src/projectsData.js'
 
 const publicDir = path.join(import.meta.dirname, '../public')
@@ -32,6 +32,8 @@ describe('checkLink', () => {
     ['ftp://example.com/x', /is not https/],
     ['FIV.pdf', /neither a site-relative file nor an absolute https URL/],
     ['', /neither a site-relative file nor an absolute https URL/],
+    ['/FIV%.pdf', /has malformed %-encoding: \/FIV%\.pdf/],
+    ['/%E0%A4%A.pdf', /has malformed %-encoding/],
     [null, /is not a string/],
   ])('rejects %j', (link, message) => {
     expect(checkLink(link, publicDir)).toMatch(message)
@@ -39,8 +41,18 @@ describe('checkLink', () => {
 })
 
 describe('validateHandKept', () => {
-  it('accepts the real hand-kept list', () => {
+  it('accepts the real hand-kept list, which is only the financial viscosity indicator', () => {
     expect(validateHandKept(handKeptProjects, publicDir)).toBe(handKeptProjects)
+    expect(handKeptProjects).toEqual([{
+      title: 'financial viscosity indicator',
+      date: '2025-04',
+      description: 'A physics-inspired market stability indicator combining price displacement and velocity; tested on SPY 2020–2025. My post on it got 25,000+ views.',
+      technologies: ['Mathematics', 'Differential Equations', 'Financial Modeling', 'Research'],
+      type: 'Research',
+      report: '/FIV.pdf',
+      color: '#3b82f6',
+      slug: 'financial-viscosity-indicator',
+    }])
   })
 
   it('every real hand-kept link is a public file or an https URL', () => {
@@ -58,6 +70,10 @@ describe('validateHandKept', () => {
     [{ title: '' }, /project s: "title" must be a non-empty string/],
     [{ color: undefined }, /"color" must be a non-empty string/],
     [{ technologies: 'Rust' }, /"technologies" must be an array of strings/],
+    [{ report: '/FIV%.pdf' }, /hand-kept project s: "report" has malformed %-encoding/],
+    [{ title: 'a\u0000b' }, /hand-kept project s: contains the control character U\+0000/],
+    [{ description: 'a\u001Bb' }, /hand-kept project s: contains the control character U\+001B/],
+    [{ technologies: ['ok', 'b\uFFFE'] }, /hand-kept project s: contains the control character U\+FFFE/],
   ])('rejects %j', (overrides, message) => {
     expect(() => validateHandKept([project(overrides)], publicDir)).toThrow(message)
   })
@@ -78,6 +94,17 @@ describe('mergeProjects', () => {
   it('fails when no repo is tagged, unless explicitly allowed', () => {
     expect(() => mergeProjects([], kept, { allowNoGitHubProjects: false })).toThrow(/no public GitHub repo has the portfolio topic.*ALLOW_NO_GITHUB_PROJECTS=1/)
     expect(mergeProjects([], kept, { allowNoGitHubProjects: true })).toEqual(kept)
+  })
+
+  it.each([
+    [{ ALLOW_NO_GITHUB_PROJECTS: '1' }, true],
+    [{ ALLOW_NO_GITHUB_PROJECTS: '0' }, false],
+    [{ ALLOW_NO_GITHUB_PROJECTS: 'true' }, false],
+    [{ ALLOW_NO_GITHUB_PROJECTS: '' }, false],
+    [{ ALLOW_NO_GITHUB_PROJECTS: ' 1' }, false],
+    [{}, false],
+  ])('allowNoGitHubProjects(%j) is %s', (env, expected) => {
+    expect(allowNoGitHubProjects(env)).toBe(expected)
   })
 
   it('fails on a slug used twice', () => {

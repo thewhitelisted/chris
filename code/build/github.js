@@ -1,3 +1,5 @@
+import { invalidXmlChar } from './text.js'
+
 const PER_PAGE = 100
 const MAX_PAGES = 10
 const TIMESTAMP = /^(\d{4}-\d{2})-\d{2}T\d{2}:\d{2}:\d{2}Z$/
@@ -55,6 +57,10 @@ export function repoToProject(repo, topic) {
   if (description === '') {
     throw new GitHubDataError(`repo ${repo.name} is tagged "${topic}" but has no description; add one on GitHub`)
   }
+  for (const text of [repo.name, description, repo.language ?? '', ...repo.topics]) {
+    const bad = invalidXmlChar(text)
+    if (bad) throw new GitHubDataError(`repo ${repo.name} contains the control character ${bad}`)
+  }
   const homepage = (repo.homepage ?? '').trim()
   if (homepage !== '' && !isHttpsUrl(homepage)) {
     throw new GitHubDataError(`repo ${repo.name} has homepage ${JSON.stringify(homepage)}; use an https URL or clear it`)
@@ -84,7 +90,7 @@ export function selectPortfolioProjects(repos, topic) {
     .map((repo) => repoToProject(repo, topic))
 }
 
-export async function fetchOwnerRepos({ user, token, apiUrl = 'https://api.github.com', fetchImpl = fetch }) {
+export async function fetchOwnerRepos({ user, token, apiUrl = 'https://api.github.com', fetchImpl = fetch, timeoutMs = 20000 }) {
   const headers = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
@@ -96,7 +102,7 @@ export async function fetchOwnerRepos({ user, token, apiUrl = 'https://api.githu
     const url = `${apiUrl}/users/${encodeURIComponent(user)}/repos?type=owner&per_page=${PER_PAGE}&page=${page}`
     let res
     try {
-      res = await fetchImpl(url, { headers, signal: AbortSignal.timeout(20000) })
+      res = await fetchImpl(url, { headers, signal: AbortSignal.timeout(timeoutMs) })
     } catch (err) {
       throw new GitHubDataError(`request to ${url} failed: ${err.message}`)
     }

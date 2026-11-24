@@ -1,6 +1,7 @@
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { formatDate } from '../src/dates.js'
+import { invalidXmlChar } from './text.js'
 
 const LINK_FIELDS = ['github', 'live', 'report']
 const REQUIRED_STRINGS = ['slug', 'title', 'date', 'description', 'type', 'color']
@@ -15,7 +16,12 @@ export class ProjectsError extends Error {
 export function checkLink(link, publicDir) {
   if (typeof link !== 'string') return `is not a string: ${JSON.stringify(link)}`
   if (link.startsWith('/') && !link.startsWith('//')) {
-    const relative = decodeURIComponent(link.split(/[?#]/)[0]).slice(1)
+    let relative
+    try {
+      relative = decodeURIComponent(link.split(/[?#]/)[0]).slice(1)
+    } catch {
+      return `has malformed %-encoding: ${link}`
+    }
     const file = path.resolve(publicDir, relative)
     if (!file.startsWith(path.resolve(publicDir) + path.sep)) return `escapes the public folder: ${link}`
     if (!existsSync(file) || !statSync(file).isFile()) return `points to a file missing from public/: ${link}`
@@ -46,6 +52,10 @@ export function validateHandKept(projects, publicDir) {
     if (!Array.isArray(project.technologies) || !project.technologies.every((t) => typeof t === 'string')) {
       throw new ProjectsError(`hand-kept project ${label}: "technologies" must be an array of strings`)
     }
+    for (const text of [project.title, project.description, project.type, ...project.technologies]) {
+      const bad = invalidXmlChar(text)
+      if (bad) throw new ProjectsError(`hand-kept project ${label}: contains the control character ${bad}`)
+    }
     for (const field of LINK_FIELDS) {
       if (!(field in project)) continue
       const problem = checkLink(project[field], publicDir)
@@ -53,6 +63,10 @@ export function validateHandKept(projects, publicDir) {
     }
   }
   return projects
+}
+
+export function allowNoGitHubProjects(env) {
+  return env.ALLOW_NO_GITHUB_PROJECTS === '1'
 }
 
 export function mergeProjects(fromGitHub, handKept, { allowNoGitHubProjects }) {
