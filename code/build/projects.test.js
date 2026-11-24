@@ -27,6 +27,8 @@ describe('checkLink', () => {
     ['/', /escapes the public folder|missing from public/],
     ['/../package.json', /escapes the public folder/],
     ['/%2e%2e/package.json', /escapes the public folder/],
+    ['/../public2/FIV.pdf', /escapes the public folder/],
+    ['/../publicity.pdf', /escapes the public folder/],
     ['//evil.example/x', /neither a site-relative file nor an absolute https URL/],
     ['http://example.com', /is not https/],
     ['ftp://example.com/x', /is not https/],

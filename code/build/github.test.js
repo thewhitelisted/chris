@@ -90,6 +90,19 @@ describe('selectPortfolioProjects with the recorded response', () => {
     expect(project.live).toBe('https://docs.catanatron.com')
   })
 
+  it('trims whitespace around the homepage before using it', () => {
+    const repos = tagged(['crowdbook'])
+    byName(repos, 'crowdbook').homepage = '  https://crowdbook.example/  '
+    const [project] = selectPortfolioProjects(repos, TOPIC)
+    expect(project.live).toBe('https://crowdbook.example/')
+  })
+
+  it('treats a whitespace-only homepage as none', () => {
+    const repos = tagged(['crowdbook'])
+    byName(repos, 'crowdbook').homepage = '   '
+    expect(selectPortfolioProjects(repos, TOPIC)[0]).not.toHaveProperty('live')
+  })
+
   it('treats an empty-string homepage as no live link', () => {
     expect(byName(recorded, 'Pathos').homepage).toBe('')
     const [project] = selectPortfolioProjects(tagged(['Pathos']), TOPIC)

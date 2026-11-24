@@ -26,6 +26,8 @@ describe('titleFor', () => {
     ['/', SITE_NAME],
     ['/about', 'About · Christopher Lee'],
     ['/about/', 'About · Christopher Lee'],
+    ['/about///', 'About · Christopher Lee'],
+    ['/blog/handling-adhd//', 'how i deal with having adhd'],
     ['/hobbies', 'Interests · Christopher Lee'],
     ['/blog', 'Blog · Christopher Lee'],
     ['/blog/', 'Blog · Christopher Lee'],

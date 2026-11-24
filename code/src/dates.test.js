@@ -4,7 +4,7 @@ import { handKeptProjects as projects } from './projectsData.js'
 import path from 'node:path'
 import { loadPosts } from '../build/posts.js'
 
-const blogPosts = await loadPosts(path.join(import.meta.dirname, '../posts'))
+const blogPosts = await loadPosts(path.join(import.meta.dirname, '../../posts'))
 
 describe('formatDate', () => {
   it.each([

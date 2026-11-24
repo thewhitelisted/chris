@@ -13,8 +13,8 @@ const PROJECTS_ID = 'virtual:projects'
 const resolved = (id) => `\0${id}`
 const POST_URL = /^\/posts\/([^?#]*)/
 
-export async function loadContent({ root, env }) {
-  const posts = await loadPosts(path.join(root, 'posts'))
+export async function loadContent({ root, postsDir, env }) {
+  const posts = await loadPosts(postsDir)
   const repos = await fetchOwnerRepos({ user: GITHUB_USER, token: env.GITHUB_TOKEN, apiUrl: env.GITHUB_API_URL })
   const projects = mergeProjects(
     selectPortfolioProjects(repos, PORTFOLIO_TOPIC),
@@ -40,12 +40,22 @@ export function watchPosts(watcher, postsDir, onPostsChanged) {
   watcher.on('add', onFileEvent)
   watcher.on('change', onFileEvent)
   watcher.on('unlink', onFileEvent)
+  watcher.on('addDir', onFileEvent)
+  watcher.on('unlinkDir', onFileEvent)
 }
 
-export default function contentPlugin() {
+export function hotMessage(postsError) {
+  return postsError ? { type: 'error', err: { message: postsError.message, stack: '' } } : { type: 'full-reload' }
+}
+
+export default function contentPlugin({ postsDir }) {
   let root
   let content
   let postsError = null
+  let markLoaded
+  const loaded = new Promise((resolve) => {
+    markLoaded = resolve
+  })
 
   return {
     name: 'site-content',
@@ -53,7 +63,8 @@ export default function contentPlugin() {
       root = config.root
     },
     async buildStart() {
-      content = await loadContent({ root, env: process.env })
+      content = await loadContent({ root, postsDir, env: process.env })
+      markLoaded()
     },
     resolveId(id) {
       if (id === POSTS_ID || id === PROJECTS_ID) return resolved(id)
@@ -67,8 +78,7 @@ export default function contentPlugin() {
       if (id === resolved(PROJECTS_ID)) return `export const projects = ${JSON.stringify(content.projects)}`
     },
     configureServer(server) {
-      const postsDir = path.join(root, 'posts')
-      let reloading = Promise.resolve()
+      let reloading = loaded
 
       const reloadPosts = async () => {
         try {
@@ -81,7 +91,7 @@ export default function contentPlugin() {
         const graph = server.environments.client.moduleGraph
         const mod = graph.getModuleById(resolved(POSTS_ID))
         if (mod) graph.invalidateModule(mod)
-        server.ws.send(postsError ? { type: 'error', err: { message: postsError.message, stack: '' } } : { type: 'full-reload' })
+        server.ws.send(hotMessage(postsError))
       }
 
       watchPosts(server.watcher, postsDir, () => {

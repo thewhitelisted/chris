@@ -166,7 +166,7 @@ describe('loadPosts', () => {
   })
 
   it('loads the real posts folder with both converted posts, newest first', async () => {
-    const posts = await loadPosts(path.join(import.meta.dirname, '../posts'))
+    const posts = await loadPosts(path.join(import.meta.dirname, '../../posts'))
     expect(posts.map((p) => p.slug)).toEqual(['first-work-experience', 'handling-adhd'])
     expect(posts[0]).toMatchObject({
       title: 'my first work experience in finance',
