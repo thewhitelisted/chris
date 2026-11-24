@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { StrictMode, lazy } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import Layout from './Layout.jsx'
+import SiteRouter from './SiteRouter.jsx'
 import { deferred, mount, settle } from './testUtils.js'
 
 const page = (text) => ({ default: () => <p className="test-page">{text}</p> })
@@ -20,7 +21,7 @@ function renderApp() {
   const Blog = lazyRoute('blog')
   return view.render(
     <StrictMode>
-      <BrowserRouter>
+      <SiteRouter>
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
@@ -28,13 +29,17 @@ function renderApp() {
             <Route path="/blog" element={<Blog />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      </SiteRouter>
     </StrictMode>,
   )
 }
 
 const pane = () => view.container.querySelector('.content-pane')
 const paneText = () => pane().textContent
+const visiblePaneText = () => [...pane().querySelectorAll('p')]
+  .filter((el) => !el.closest('[style*="display: none"]'))
+  .map((el) => el.textContent)
+  .join('')
 const isLoading = () => pane().querySelector('.content-loading') !== null
 const alertText = () => pane().querySelector('[role="alert"]')?.textContent
 const activeNav = () => view.container.querySelector('a.nav-item.active')?.textContent
@@ -62,15 +67,15 @@ describe('Layout route loading', () => {
     expect(activeNav()).toBe('home')
   })
 
-  it('keeps the previous page, without a fallback, while the next route chunk loads', async () => {
+  it('marks the new route active and shows Loading right away while its chunk loads', async () => {
     await renderApp()
     await settle(() => chunks.home.resolve(page('home page')))
 
     await clickNav('/projects')
     expect(window.location.pathname).toBe('/projects')
-    expect(paneText()).toBe('home page')
-    expect(isLoading()).toBe(false)
-    expect(activeNav()).toBe('home')
+    expect(activeNav()).toBe('projects')
+    expect(isLoading()).toBe(true)
+    expect(visiblePaneText()).toBe('Loading...')
 
     await settle(() => chunks.projects.resolve(page('projects page')))
     expect(paneText()).toBe('projects page')
@@ -89,11 +94,12 @@ describe('Layout route loading', () => {
     expect(activeNav()).toBe('home')
   })
 
-  it('goes from the previous page straight to the error view when the chunk fails, sidebar intact', async () => {
+  it('goes from Loading to the error view when the chunk fails, sidebar intact', async () => {
     await renderApp()
     await settle(() => chunks.home.resolve(page('home page')))
 
     await clickNav('/projects')
+    expect(isLoading()).toBe(true)
     await settle(() => chunks.projects.reject(new TypeError('Failed to fetch dynamically imported module')))
 
     expect(alertText()).toBe('This page failed to load. Reload to try again.')

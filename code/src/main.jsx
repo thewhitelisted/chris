@@ -1,6 +1,6 @@
 import { StrictMode, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import './index.css'
 import './App.css'
 import './BlogPost.css'
@@ -8,6 +8,7 @@ import './Blog.css'
 import './Layout.css'
 import './Projects.css'
 import Layout from './Layout.jsx'
+import SiteRouter from './SiteRouter.jsx'
 
 const App = lazy(() => import('./App.jsx'))
 const MarkdownPage = lazy(() => import('./MarkdownPage.jsx'))
@@ -17,7 +18,7 @@ const BlogPost = lazy(() => import('./BlogPost.jsx'))
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Router basename="/">
+    <SiteRouter>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<App />} />
@@ -29,6 +30,6 @@ createRoot(document.getElementById('root')).render(
           <Route path="/blog/:slug" element={<BlogPost />} />
         </Route>
       </Routes>
-    </Router>
+    </SiteRouter>
   </StrictMode>,
 )
