@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { Home, User, FolderOpen, BookOpen, FileText, Music, Lightbulb, Menu, X } from 'lucide-react'
-import './Layout.css'
+import Loading from './Loading.jsx'
 
 function Layout() {
   const location = useLocation()
@@ -103,7 +103,9 @@ function Layout() {
         <main className="content">
           <div className="sidebar-spacer" />
           <div className={`content-pane${isHome ? ' content-pane-home' : ''}`}>
-            <Outlet />
+            <Suspense fallback={<Loading />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>

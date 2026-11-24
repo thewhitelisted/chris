@@ -5,7 +5,6 @@ import { blogPosts } from './blogData.js'
 import { formatDate } from './dates.js'
 import { useListing } from './listing.js'
 import SortHeader from './SortHeader.jsx'
-import './Blog.css'
 
 const COLUMNS = [
   { key: 'name', label: 'Name' },

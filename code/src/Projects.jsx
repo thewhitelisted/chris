@@ -6,7 +6,6 @@ import { formatDate } from './dates.js'
 import { useListing } from './listing.js'
 import SortHeader from './SortHeader.jsx'
 import StickyNote from './StickyNote.jsx'
-import './Projects.css'
 
 const COLUMNS = [
   { key: 'name', label: 'Name' },

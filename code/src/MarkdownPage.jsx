@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import './BlogPost.css'
+import Loading from './Loading.jsx'
 
 const components = {
   h1: ({children}) => <h1 className="post-title">{children}</h1>,
@@ -46,7 +46,7 @@ function MarkdownPage({ url }) {
   }, [url])
 
   if (result?.url !== url) {
-    return <div className="content-page"><p className="content-loading">Loading...</p></div>
+    return <Loading />
   }
 
   if (result.error) {
