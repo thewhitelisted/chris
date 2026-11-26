@@ -1,4 +1,4 @@
-import { sortNewestFirst } from './posts.js'
+import { devlogTitle } from '../src/site.js'
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }
 
@@ -17,17 +17,34 @@ export function postUrl(siteUrl, slug) {
   return `${siteUrl}/blog/${encodeURIComponent(slug)}`
 }
 
-export function renderRss({ siteUrl, title, description, posts }) {
-  const newestFirst = sortNewestFirst(posts)
-  const items = newestFirst.map((post) => {
-    const link = escapeMarkup(postUrl(siteUrl, post.slug))
+export function devlogUrl(siteUrl, project, date) {
+  return `${siteUrl}/projects/${encodeURIComponent(project)}/${date}`
+}
+
+export function renderRss({ siteUrl, title, description, posts, devlogs, projects }) {
+  const projectTitles = new Map(projects.map((project) => [project.slug, project.title]))
+  const projectTitle = (entry) => {
+    if (!projectTitles.has(entry.project)) throw new Error(`devlog ${entry.project}/${entry.date} belongs to no project`)
+    return projectTitles.get(entry.project)
+  }
+  const newestFirst = [
+    ...posts.map((post) => ({ title: post.title, link: postUrl(siteUrl, post.slug), date: post.date, description: post.description })),
+    ...devlogs.map((entry) => ({
+      title: devlogTitle(projectTitle(entry), entry.title),
+      link: devlogUrl(siteUrl, entry.project, entry.date),
+      date: entry.date,
+      description: entry.description,
+    })),
+  ].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.link.localeCompare(b.link)))
+  const items = newestFirst.map((item) => {
+    const link = escapeMarkup(item.link)
     return [
       '    <item>',
-      `      <title>${escapeMarkup(post.title)}</title>`,
+      `      <title>${escapeMarkup(item.title)}</title>`,
       `      <link>${link}</link>`,
       `      <guid isPermaLink="true">${link}</guid>`,
-      `      <pubDate>${rfc822(post.date)}</pubDate>`,
-      `      <description>${escapeMarkup(post.description)}</description>`,
+      `      <pubDate>${rfc822(item.date)}</pubDate>`,
+      `      <description>${escapeMarkup(item.description)}</description>`,
       '    </item>',
     ].join('\n')
   })

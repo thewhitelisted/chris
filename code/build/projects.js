@@ -75,8 +75,9 @@ export function validateHandKept(projects, publicDir) {
     if ('private' in project) {
       throw new ProjectsError(`hand-kept project ${label}: "private" is only set for GitHub repos; leave out the github link instead`)
     }
+    if ('stats' in project) throw new ProjectsError(`hand-kept project ${label}: "stats" come from GitHub and cannot be set by hand`)
   }
-  return projects.map((project) => ({ status: 'complete', ...project, private: false }))
+  return projects.map((project) => ({ status: 'complete', ...project, private: false, stats: null }))
 }
 
 export function allowNoGitHubProjects(env) {

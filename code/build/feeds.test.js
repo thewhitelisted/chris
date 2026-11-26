@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { XMLParser, XMLValidator } from 'fast-xml-parser'
-import { escapeMarkup, rfc822, renderRss, headTags, withHead, pageFiles } from './feeds.js'
+import { escapeMarkup, rfc822, renderRss, headTags, withHead, pageFiles, devlogUrl } from './feeds.js'
 
 const SITE = 'https://www.christopherjlee.ca'
 const nasty = `Tom & Jerry <script>alert("x")</script> 'q' ]]> &amp;`
@@ -64,7 +64,7 @@ describe('renderRss', () => {
   ]
 
   it('is valid RSS 2.0 with absolute links, newest first', () => {
-    const rss = parseRss(renderRss({ siteUrl: SITE, title: 'Christopher Lee', description: 'd', posts })).rss
+    const rss = parseRss(renderRss({ siteUrl: SITE, title: 'Christopher Lee', description: 'd', posts, devlogs: [], projects: [] })).rss
     expect(rss['@_version']).toBe('2.0')
     expect(rss.channel.link).toBe(`${SITE}/blog`)
     expect(rss.channel['atom:link']['@_href']).toBe(`${SITE}/rss.xml`)
@@ -80,7 +80,7 @@ describe('renderRss', () => {
   })
 
   it('round-trips &, <, quotes and a CDATA terminator in titles and descriptions', () => {
-    const xml = renderRss({ siteUrl: SITE, title: nasty, description: nasty, posts })
+    const xml = renderRss({ siteUrl: SITE, title: nasty, description: nasty, posts, devlogs: [], projects: [] })
     expect(xml).not.toContain('<script>')
     const parser = new XMLParser({ ignoreAttributes: false, isArray: (name) => name === 'item', processEntities: true, htmlEntities: false })
     const rss = parser.parse(xml).rss
@@ -89,8 +89,76 @@ describe('renderRss', () => {
     expect(rss.channel.item[1].description).toBe(nasty)
   })
 
+  describe('with devlog entries', () => {
+    const projects = [{ slug: 'pathos', title: 'Pathos' }, { slug: 'fvi', title: nasty }]
+    const devlogs = [
+      { project: 'pathos', date: '2026-03-04', title: 'first take', description: 'why' },
+      { project: 'fvi', date: '2025-06-18', title: 'revisit', description: 'again' },
+      { project: 'pathos', date: '2027-01-01', title: 'newest of all', description: 'n' },
+    ]
+    const render = (extra = {}) => renderRss({ siteUrl: SITE, title: 't', description: 'd', posts, devlogs, projects, ...extra })
+
+    it('merges entries with posts, newest first, breaking date ties by link', () => {
+      const rss = parseRss(render()).rss
+      expect(rss.channel.item.map((i) => i.link)).toEqual([
+        `${SITE}/projects/pathos/2027-01-01`,
+        `${SITE}/blog/newest`,
+        `${SITE}/projects/pathos/2026-03-04`,
+        `${SITE}/blog/nasty`,
+        `${SITE}/projects/fvi/2025-06-18`,
+        `${SITE}/blog/older`,
+      ])
+      expect(rss.channel.lastBuildDate).toBe('Fri, 01 Jan 2027 00:00:00 +0000')
+    })
+
+    it('titles an entry with its project and links it to /projects/<project>/<date>', () => {
+      const parser = new XMLParser({ ignoreAttributes: false, isArray: (name) => name === 'item', processEntities: true, htmlEntities: false })
+      const items = parser.parse(render()).rss.channel.item
+      expect(items[0]).toMatchObject({
+        title: 'Pathos devlog: newest of all',
+        link: `${SITE}/projects/pathos/2027-01-01`,
+        pubDate: 'Fri, 01 Jan 2027 00:00:00 +0000',
+        description: 'n',
+      })
+      expect(items[0].guid['#text']).toBe(`${SITE}/projects/pathos/2027-01-01`)
+      expect(items[4].title).toBe(`${nasty} devlog: revisit`)
+    })
+
+    it('orders same-date items by link whatever order they arrive in', () => {
+      const rss = parseRss(renderRss({
+        siteUrl: SITE,
+        title: 't',
+        description: 'd',
+        posts: [{ slug: 'zeta', title: 'z', date: '2026-01-01', description: 'd' }, { slug: 'alpha', title: 'a', date: '2026-01-01', description: 'd' }],
+        devlogs: [
+          { project: 'pathos', date: '2026-01-01', title: 'p', description: 'd' },
+          { project: 'fvi', date: '2026-01-01', title: 'f', description: 'd' },
+        ],
+        projects,
+      })).rss
+      expect(rss.channel.item.map((i) => i.link)).toEqual([
+        `${SITE}/blog/alpha`,
+        `${SITE}/blog/zeta`,
+        `${SITE}/projects/fvi/2026-01-01`,
+        `${SITE}/projects/pathos/2026-01-01`,
+      ])
+    })
+
+    it('lists entries alone when there are no posts', () => {
+      expect(parseRss(render({ posts: [] })).rss.channel.item).toHaveLength(3)
+    })
+
+    it('fails on an entry whose project is missing', () => {
+      expect(() => render({ projects: projects.slice(1) })).toThrow('devlog pathos/2026-03-04 belongs to no project')
+    })
+
+    it('percent-encodes the project in the link', () => {
+      expect(devlogUrl(SITE, 'a b', '2026-01-01')).toBe(`${SITE}/projects/a%20b/2026-01-01`)
+    })
+  })
+
   it('is valid with no posts', () => {
-    const rss = parseRss(renderRss({ siteUrl: SITE, title: 't', description: 'd', posts: [] })).rss
+    const rss = parseRss(renderRss({ siteUrl: SITE, title: 't', description: 'd', posts: [], devlogs: [], projects: [] })).rss
     expect(rss.channel.item).toBeUndefined()
     expect(rss.channel.lastBuildDate).toBeUndefined()
   })
@@ -153,6 +221,7 @@ describe('pageFiles', () => {
     ['/', ['index.html']],
     ['/projects', ['projects.html', 'projects/index.html']],
     ['/blog/handling-adhd', ['blog/handling-adhd.html', 'blog/handling-adhd/index.html']],
+    ['/projects/pathos/2026-11-26', ['projects/pathos/2026-11-26.html', 'projects/pathos/2026-11-26/index.html']],
   ])('%s -> %j', (route, files) => {
     expect(pageFiles(route)).toEqual(files)
   })

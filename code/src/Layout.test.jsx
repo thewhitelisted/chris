@@ -28,6 +28,7 @@ function renderApp() {
             <Route path="/projects" element={<Projects />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<p className="test-page">post</p>} />
+            <Route path="/projects/:slug/:date" element={<p className="test-page">devlog entry</p>} />
             <Route path="/about" element={<p className="test-page">about</p>} />
           </Route>
         </Routes>
@@ -171,6 +172,12 @@ describe('Layout document title', () => {
     window.history.replaceState(null, '', '/blog/r-and-d')
     await renderApp()
     expect(document.title).toBe('R&D <notes>')
+  })
+
+  it('titles devlog routes from virtual:devlogs and virtual:projects', async () => {
+    window.history.replaceState(null, '', '/projects/stealth-alpha/2026-11-20')
+    await renderApp()
+    expect(document.title).toBe('stealth-alpha devlog: fills & <slippage>')
   })
 
   it('falls back to the site name for an unknown post', async () => {

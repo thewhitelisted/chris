@@ -1,7 +1,19 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { fetchOwnerRepos, selectPortfolioProjects, repoToProject, validateRepo, GitHubDataError, IN_PROGRESS_TOPIC } from './github.js'
+import {
+  fetchOwnerRepos,
+  selectPortfolioProjects,
+  repoToProject,
+  validateRepo,
+  GitHubDataError,
+  IN_PROGRESS_TOPIC,
+  languagePercents,
+  commitActivity,
+  fetchRepoStats,
+  addRepoStats,
+  MAX_CLOCK_SKEW_MS,
+} from './github.js'
 
 const fixture = (name) => JSON.parse(readFileSync(path.join(import.meta.dirname, 'fixtures', name), 'utf8'))
 const recorded = fixture('users-repos-2026-11-24.json')
@@ -395,5 +407,388 @@ describe('fetchOwnerRepos', () => {
     const error = await fetchOwnerRepos({ user: 'u', fetchImpl }).catch((err) => err)
     expect(error).toBeInstanceOf(GitHubDataError)
     expect(error.message).toMatch(message)
+  })
+})
+
+// Input space for repo stats:
+// - languages: the recorded response, {}, one language, zero-byte languages, equal byte counts, many random maps;
+//   malformed: null, array, string, negative / fractional / string / unsafe byte counts, blank or control-character names
+// - commit activity: the recorded response; 51 or 53 weeks; a week not on Sunday 00:00 UTC; 6 days; days not adding
+//   up to the total; negative counts; a gap between weeks; a week starting after the build time; a newest week that
+//   GitHub starts at 23:00 UTC Saturday, built in that last hour of Saturday; data that ends weeks before the build
+//   date (GitHub caches stats until the next push)
+// - last30Days boundary, all in UTC: today, 29 days ago (in), 30 days ago (out), later today in this week (out of the
+//   future), build time at 00:00:00.000 and 23:59:59.999, build day Sunday and Saturday; randomised against a
+//   reference built from Date arithmetic
+// - fetching: 200, 202 then 200, 202 every time (bounded attempts with doubling delay), 204, 401 with and without the
+//   private token, 403, 404, 500 on either endpoint, a 202 from /languages, non-JSON, a network error
+// - which projects get stats: in-progress, complete, archived
+const recordedLanguages = fixture('repos-crowdbook-languages-2026-11-26.json')
+const recordedActivity = fixture('repos-crowdbook-commit-activity-2026-11-26.json')
+const DAY_MS = 86400000
+
+function weeksEnding(lastSundayIso, countFor = () => 0) {
+  const last = Date.parse(`${lastSundayIso}T00:00:00Z`)
+  return Array.from({ length: 52 }, (_, i) => {
+    const start = last - (51 - i) * 7 * DAY_MS
+    const days = Array.from({ length: 7 }, (_, d) => countFor(new Date(start + d * DAY_MS).toISOString().slice(0, 10)))
+    return { total: days.reduce((a, b) => a + b, 0), week: start / 1000, days }
+  })
+}
+
+function referenceActivity(weeks, nowMs) {
+  const todayIso = new Date(nowMs).toISOString().slice(0, 10)
+  const today = Date.parse(todayIso)
+  const recent = new Set(Array.from({ length: 30 }, (_, k) => new Date(today - k * DAY_MS).toISOString().slice(0, 10)))
+  let last30Days = 0
+  for (const w of weeks) {
+    w.days.forEach((count, d) => {
+      if (recent.has(new Date(w.week * 1000 + d * DAY_MS).toISOString().slice(0, 10))) last30Days += count
+    })
+  }
+  const sunday = today - new Date(today).getUTCDay() * DAY_MS
+  const weekly = Array.from({ length: 52 }, (_, i) => weeks.find((w) => w.week * 1000 === sunday - (51 - i) * 7 * DAY_MS)?.total ?? 0)
+  return { weekly, last30Days }
+}
+
+function seeded(seed) {
+  let state = seed
+  return () => {
+    state = (state * 1103515245 + 12345) % 2147483648
+    return state / 2147483648
+  }
+}
+
+describe('languagePercents', () => {
+  it('turns the recorded byte counts into percentages, largest first', () => {
+    expect(languagePercents(recordedLanguages, 'crowdbook')).toEqual([
+      { name: 'C++', percent: 68.2 },
+      { name: 'Python', percent: 30.4 },
+      { name: 'CMake', percent: 1.3 },
+      { name: 'Dockerfile', percent: 0.1 },
+    ])
+  })
+
+  it('returns no languages for an empty repo and drops zero-byte languages', () => {
+    expect(languagePercents({}, 'r')).toEqual([])
+    expect(languagePercents({ Rust: 0 }, 'r')).toEqual([])
+    expect(languagePercents({ Rust: 10, Shell: 0 }, 'r')).toEqual([{ name: 'Rust', percent: 100 }])
+  })
+
+  it('breaks byte-count ties by name', () => {
+    expect(languagePercents({ Zig: 1, C: 1, Go: 2 }, 'r').map((l) => l.name)).toEqual(['Go', 'C', 'Zig'])
+  })
+
+  it('sorts descending and sums to 100 within rounding for random inputs', () => {
+    const random = seeded(7)
+    for (let run = 0; run < 500; run++) {
+      const n = 1 + Math.floor(random() * 12)
+      const input = Object.fromEntries(Array.from({ length: n }, (_, i) => [`L${i}`, Math.floor(random() ** 4 * 5e6) + 1]))
+      const out = languagePercents(input, 'r')
+      const total = Object.values(input).reduce((a, b) => a + b, 0)
+      expect(out).toHaveLength(n)
+      for (let i = 1; i < out.length; i++) expect(input[out[i - 1].name]).toBeGreaterThanOrEqual(input[out[i].name])
+      for (const { name, percent } of out) expect(Math.abs(percent - (input[name] / total) * 100)).toBeLessThanOrEqual(0.05 + 1e-9)
+      expect(Math.abs(out.reduce((sum, l) => sum + l.percent, 0) - 100)).toBeLessThanOrEqual(0.05 * n + 1e-9)
+    }
+  })
+
+  it.each([
+    ['null', null, /languages should be an object/],
+    ['an array', [], /languages should be an object/],
+    ['a string', 'C++', /languages should be an object/],
+    ['a negative count', { C: -1 }, /language C should have a byte count, got -1/],
+    ['a fractional count', { C: 1.5 }, /language C should have a byte count/],
+    ['a string count', { C: '10' }, /language C should have a byte count/],
+    ['an unsafe count', { C: 2 ** 60 }, /language C should have a byte count/],
+    ['a blank name', { ' ': 1 }, /invalid language name " "/],
+    ['a control character', { 'C\u0007': 1 }, /invalid language name/],
+  ])('fails on %s', (_name, input, message) => {
+    expect(() => languagePercents(input, 'r')).toThrow(GitHubDataError)
+    expect(() => languagePercents(input, 'r')).toThrow(message)
+  })
+})
+
+describe('commitActivity', () => {
+  const at = (iso) => Date.parse(iso)
+
+  it('reads the recorded response: 52 weekly totals, oldest first, and the last 30 days', () => {
+    const activity = commitActivity(recordedActivity, 'crowdbook', at('2026-11-26T12:00:00Z'))
+    expect(activity.weekly).toEqual(recordedActivity.map((w) => w.total))
+    expect(activity.weekly.at(-6)).toBe(122)
+    expect(activity.last30Days).toBe(0)
+  })
+
+  describe('last30Days counts the 30 UTC days ending on the build day, inclusive', () => {
+    const ones = weeksEnding('2026-11-22', () => 1)
+    const only = (iso) => weeksEnding('2026-11-22', (day) => (day === iso ? 1 : 0))
+
+    it.each([
+      ['today', '2026-11-26', 1],
+      ['29 days ago', '2026-10-28', 1],
+      ['30 days ago', '2026-10-27', 0],
+      ['tomorrow, later this week', '2026-11-27', 0],
+    ])('a commit %s (%s) counts %i', (_label, iso, expected) => {
+      expect(commitActivity(only(iso), 'r', at('2026-11-26T12:00:00Z')).last30Days).toBe(expected)
+    })
+
+    it.each([
+      ['the first millisecond of the day', '2026-11-26T00:00:00.000Z'],
+      ['the last millisecond of the day', '2026-11-26T23:59:59.999Z'],
+    ])('uses the UTC calendar day at %s', (_label, iso) => {
+      expect(commitActivity(only('2026-10-28'), 'r', at(iso)).last30Days).toBe(1)
+      expect(commitActivity(only('2026-10-27'), 'r', at(iso)).last30Days).toBe(0)
+      expect(commitActivity(ones, 'r', at(iso)).last30Days).toBe(30)
+    })
+
+    it('rolls over at midnight UTC', () => {
+      expect(commitActivity(only('2026-10-28'), 'r', at('2026-11-27T00:00:00.000Z')).last30Days).toBe(0)
+    })
+
+    it('works when the build day is the Sunday that starts the newest week, or the Saturday that ends it', () => {
+      expect(commitActivity(ones, 'r', at('2026-11-22T08:00:00Z'))).toEqual({ weekly: ones.map((w) => w.total), last30Days: 30 })
+      expect(commitActivity(ones, 'r', at('2026-11-28T08:00:00Z'))).toEqual({ weekly: ones.map((w) => w.total), last30Days: 30 })
+    })
+  })
+
+  it('shifts stale data so the newest week is the build week, filling weeks GitHub has not counted with 0', () => {
+    const stale = weeksEnding('2026-11-08', () => 1)
+    const activity = commitActivity(stale, 'r', at('2026-11-26T12:00:00Z'))
+    expect(activity.weekly).toEqual([...Array(50).fill(7), 0, 0])
+    expect(activity.last30Days).toBe(18)
+  })
+
+  it('maps week starts GitHub shifts by an hour or so to the nearest UTC Sunday', () => {
+    const shifted = (hours) => weeksEnding('2026-11-22', (day) => (day === '2026-11-01' ? 2 : 0)).map((w) => ({ ...w, week: w.week + hours * 3600 }))
+    for (const hours of [-11, -1, 1, 11]) {
+      expect(commitActivity(shifted(hours), 'r', at('2026-11-26T12:00:00Z'))).toEqual({ weekly: [...Array(48).fill(0), 2, 0, 0, 0], last30Days: 2 })
+    }
+  })
+
+  describe('a newest week that GitHub starts at 23:00 UTC on Saturday', () => {
+    const early = () => weeksEnding('2026-11-29', (day) => (day === '2026-11-29' ? 4 : day === '2026-11-28' ? 1 : 0))
+      .map((w) => ({ ...w, week: w.week - 3600 }))
+
+    it('ends the weekly counts with that week when built in the last hour of Saturday', () => {
+      const activity = commitActivity(early(), 'r', at('2026-11-28T23:30:00Z'))
+      expect(activity.weekly.slice(-2)).toEqual([1, 4])
+      expect(activity.last30Days).toBe(1)
+    })
+
+    it('accepts a newest week that starts exactly at the build time', () => {
+      const weeks = weeksEnding('2026-11-22', (day) => (day === '2026-11-22' ? 2 : 0))
+      expect(commitActivity(weeks, 'r', at('2026-11-22T00:00:00.000Z'))).toEqual({ weekly: [...Array(51).fill(0), 2], last30Days: 2 })
+    })
+
+    it('allows the build clock to lag GitHub by up to 5 minutes, and no more', () => {
+      expect(MAX_CLOCK_SKEW_MS).toBe(5 * 60 * 1000)
+      const weeks = weeksEnding('2026-11-29', (day) => (day === '2026-11-28' ? 1 : day === '2026-11-29' ? 4 : 0))
+      const start = at('2026-11-29T00:00:00.000Z')
+      expect(commitActivity(weeks, 'x', start - 500)).toEqual({ weekly: [...Array(50).fill(0), 1, 4], last30Days: 1 })
+      expect(commitActivity(weeks, 'x', start - MAX_CLOCK_SKEW_MS).weekly.slice(-2)).toEqual([1, 4])
+      expect(() => commitActivity(weeks, 'x', start - MAX_CLOCK_SKEW_MS - 1)).toThrow(/has a week starting more than 5 minutes after the build time 2026-11-28T23:54:59.999Z/)
+    })
+
+    it('still fails when built more than the allowed skew before that week starts', () => {
+      expect(() => commitActivity(early(), 'r', at('2026-11-28T22:54:59.999Z'))).toThrow(/has a week starting more than 5 minutes after the build time/)
+    })
+  })
+
+  it('returns all zeros when the data is more than a year old', () => {
+    expect(commitActivity(weeksEnding('2024-01-07', () => 3), 'r', at('2026-11-26T12:00:00Z'))).toEqual({ weekly: Array(52).fill(0), last30Days: 0 })
+  })
+
+  it('matches a reference built from Date arithmetic on random data and build times', () => {
+    const random = seeded(11)
+    for (let run = 0; run < 300; run++) {
+      const lag = Math.floor(random() * 60)
+      const lastSunday = new Date(Date.parse('2026-11-22T00:00:00Z') - lag * 7 * DAY_MS).toISOString().slice(0, 10)
+      const weeks = weeksEnding(lastSunday, () => (random() < 0.4 ? Math.floor(random() * 9) : 0))
+      const nowMs = Date.parse('2026-11-22T00:00:00Z') + Math.floor(random() * 7 * DAY_MS)
+      expect(commitActivity(weeks, 'r', nowMs)).toEqual(referenceActivity(weeks, nowMs))
+    }
+  })
+
+  const good = () => weeksEnding('2026-11-22', () => 1)
+  it.each([
+    ['51 weeks', () => good().slice(1), /should be 52 weeks/],
+    ['53 weeks', () => [...weeksEnding('2025-11-23').slice(0, 1), ...good()], /should be 52 weeks/],
+    ['an object', () => ({}), /should be 52 weeks/],
+    ['a Monday week start', () => good().map((w) => ({ ...w, week: w.week + 86400 })), /week 0 .* should start within 12 hours of a Sunday 00:00 UTC/],
+    ['a week start at 13:00 on Sunday', () => good().map((w) => ({ ...w, week: w.week + 13 * 3600 })), /should start within 12 hours of a Sunday/],
+    ['a week start at 11:00 on Saturday', () => good().map((w) => ({ ...w, week: w.week - 13 * 3600 })), /should start within 12 hours of a Sunday/],
+    ['a string week', () => good().map((w, i) => (i === 3 ? { ...w, week: String(w.week) } : w)), /week 3 .* should start within 12 hours of a Sunday/],
+    ['six days', () => good().map((w, i) => (i === 5 ? { ...w, days: w.days.slice(1), total: 6 } : w)), /week 5 .* should have a total and 7 daily counts/],
+    ['a negative count', () => good().map((w, i) => (i === 5 ? { ...w, days: [-1, 1, 1, 1, 1, 1, 1], total: 5 } : w)), /should have a total and 7 daily counts/],
+    ['days not adding up', () => good().map((w, i) => (i === 5 ? { ...w, total: 8 } : w)), /week 5 .* daily counts that do not add up/],
+    ['a gap', () => good().map((w, i) => (i === 10 ? { ...w, week: w.week + 7 * 86400 } : w)), /week 10 .* does not follow the previous week|week 11/],
+    ['a week after the build date', () => weeksEnding('2026-11-29'), /has a week starting more than 5 minutes after the build time 2026-11-26T12:00:00.000Z/],
+  ])('fails on %s, naming the repo', (_name, make, message) => {
+    const error = (() => {
+      try {
+        commitActivity(make(), 'crowdbook', at('2026-11-26T12:00:00Z'))
+      } catch (err) {
+        return err
+      }
+    })()
+    expect(error).toBeInstanceOf(GitHubDataError)
+    expect(error.message).toMatch(/^GitHub projects: repo crowdbook: commit activity /)
+    expect(error.message).toMatch(message)
+  })
+})
+
+describe('fetchRepoStats', () => {
+  const NOW = Date.parse('2026-11-26T12:00:00Z')
+  const statusResponse = (status) => new Response(status === 204 ? null : '{}', { status })
+
+  function routedFetch({ languages = () => jsonResponse(recordedLanguages), activity }) {
+    const calls = []
+    const fetchImpl = async (url, init) => {
+      calls.push({ url, headers: init.headers })
+      if (url.endsWith('/languages')) return languages()
+      if (url.endsWith('/stats/commit_activity')) return activity(calls.filter((c) => c.url.endsWith('/stats/commit_activity')).length)
+      throw new Error(`unexpected request ${url}`)
+    }
+    return { calls, fetchImpl }
+  }
+
+  function run(fetchImpl, extra = {}) {
+    const warnings = []
+    const delays = []
+    const promise = fetchRepoStats({
+      user: 'thewhitelisted',
+      repo: 'crowdbook',
+      token: 'tkn',
+      fetchImpl,
+      nowMs: NOW,
+      warn: (message) => warnings.push(message),
+      sleep: async (ms) => { delays.push(ms) },
+      ...extra,
+    })
+    return { promise, warnings, delays }
+  }
+
+  it('fetches languages and commit activity for the repo with the token', async () => {
+    const { calls, fetchImpl } = routedFetch({ activity: () => jsonResponse(recordedActivity) })
+    const { promise, warnings, delays } = run(fetchImpl)
+    expect(await promise).toEqual({
+      languages: languagePercents(recordedLanguages, 'crowdbook'),
+      activity: commitActivity(recordedActivity, 'crowdbook', NOW),
+    })
+    expect(calls.map((c) => c.url)).toEqual([
+      'https://api.github.com/repos/thewhitelisted/crowdbook/languages',
+      'https://api.github.com/repos/thewhitelisted/crowdbook/stats/commit_activity',
+    ])
+    expect(calls.every((c) => c.headers.Authorization === 'Bearer tkn')).toBe(true)
+    expect(warnings).toEqual([])
+    expect(delays).toEqual([])
+  })
+
+  it('returns exactly languages and activity, nothing else from the responses', async () => {
+    const { fetchImpl } = routedFetch({ activity: () => jsonResponse(recordedActivity) })
+    const stats = await run(fetchImpl).promise
+    expect(Object.keys(stats)).toEqual(['languages', 'activity'])
+    expect(Object.keys(stats.activity)).toEqual(['weekly', 'last30Days'])
+    expect(stats.languages.every((l) => Object.keys(l).join() === 'name,percent')).toBe(true)
+  })
+
+  it('retries while GitHub computes the stats (HTTP 202), doubling the delay', async () => {
+    const { calls, fetchImpl } = routedFetch({ activity: (n) => (n < 3 ? statusResponse(202) : jsonResponse(recordedActivity)) })
+    const { promise, warnings, delays } = run(fetchImpl)
+    expect((await promise).activity).toEqual(commitActivity(recordedActivity, 'crowdbook', NOW))
+    expect(calls.filter((c) => c.url.endsWith('commit_activity'))).toHaveLength(3)
+    expect(delays).toEqual([1000, 2000])
+    expect(warnings).toEqual([])
+  })
+
+  it('gives up after 5 attempts with activity null and a warning, not an error', async () => {
+    const { calls, fetchImpl } = routedFetch({ activity: () => statusResponse(202) })
+    const { promise, warnings, delays } = run(fetchImpl)
+    expect(await promise).toEqual({ languages: languagePercents(recordedLanguages, 'crowdbook'), activity: null })
+    expect(calls.filter((c) => c.url.endsWith('commit_activity'))).toHaveLength(5)
+    expect(delays).toEqual([1000, 2000, 4000, 8000])
+    expect(warnings).toEqual(['GitHub projects: GitHub was still computing commit activity for crowdbook after 5 attempts (HTTP 202); building without it'])
+  })
+
+  it('honours a custom attempt count and delay, and waits for real by default', async () => {
+    const { calls, fetchImpl } = routedFetch({ activity: () => statusResponse(202) })
+    const started = Date.now()
+    const warnings = []
+    const stats = await fetchRepoStats({
+      user: 'u', repo: 'r', fetchImpl, nowMs: NOW, warn: (m) => warnings.push(m), activityAttempts: 3, retryDelayMs: 20,
+    })
+    expect(stats.activity).toBeNull()
+    expect(calls.filter((c) => c.url.endsWith('commit_activity'))).toHaveLength(3)
+    expect(Date.now() - started).toBeGreaterThanOrEqual(55)
+    expect(warnings).toHaveLength(1)
+  })
+
+  it('sets activity null with a warning when GitHub has no activity (HTTP 204)', async () => {
+    const { fetchImpl } = routedFetch({ activity: () => statusResponse(204) })
+    const { promise, warnings, delays } = run(fetchImpl)
+    expect((await promise).activity).toBeNull()
+    expect(delays).toEqual([])
+    expect(warnings).toEqual(['GitHub projects: repo crowdbook has no commit activity (HTTP 204); building without it'])
+  })
+
+  it('names the secret when the private-repo token is rejected', async () => {
+    const { fetchImpl } = routedFetch({ languages: () => jsonResponse({ message: 'Bad credentials' }, 401), activity: () => statusResponse(202) })
+    await expect(run(fetchImpl, { privateToken: true }).promise).rejects.toThrow(/languages returned HTTP 401 \(PORTFOLIO_REPOS_TOKEN is expired/)
+    const { fetchImpl: plain } = routedFetch({ languages: () => jsonResponse({ message: 'Bad credentials' }, 401), activity: () => statusResponse(202) })
+    const error = await run(plain).promise.catch((err) => err)
+    expect(error.message).toMatch(/languages returned HTTP 401: .*Bad credentials/)
+    expect(error.message).not.toContain('PORTFOLIO_REPOS_TOKEN')
+  })
+
+  it.each([
+    ['languages', 403], ['languages', 404], ['languages', 500], ['languages', 202],
+    ['commit_activity', 401], ['commit_activity', 403], ['commit_activity', 404], ['commit_activity', 500],
+  ])('fails loudly when %s returns HTTP %i', async (endpoint, status) => {
+    const failing = () => jsonResponse({ message: 'nope' }, status)
+    const { fetchImpl } = routedFetch(endpoint === 'languages'
+      ? { languages: failing, activity: () => jsonResponse(recordedActivity) }
+      : { activity: failing })
+    const { promise, warnings } = run(fetchImpl)
+    const error = await promise.catch((err) => err)
+    expect(error).toBeInstanceOf(GitHubDataError)
+    expect(error.message).toMatch(new RegExp(`/${endpoint} returned HTTP ${status}`))
+    expect(warnings).toEqual([])
+  })
+
+  it.each([
+    ['a non-JSON activity body', { activity: () => jsonResponse('<html>') }, /commit_activity did not return JSON/],
+    ['malformed activity', { activity: () => jsonResponse([]) }, /commit activity should be 52 weeks/],
+    ['malformed languages', { languages: () => jsonResponse([]), activity: () => jsonResponse(recordedActivity) }, /languages should be an object/],
+    ['a network error', { activity: () => { throw new TypeError('fetch failed') } }, /commit_activity failed: fetch failed/],
+  ])('fails loudly on %s', async (_name, routes, message) => {
+    const { fetchImpl } = routedFetch(routes)
+    await expect(run(fetchImpl).promise).rejects.toThrow(message)
+  })
+})
+
+describe('addRepoStats', () => {
+  it('fetches stats for in-progress projects only, by repo name, and sets null for the rest', async () => {
+    const asked = []
+    const projects = [
+      { title: 'Live', status: 'in-progress' },
+      { title: 'Done', status: 'complete' },
+      { title: 'Old', status: 'archived' },
+    ]
+    const result = await addRepoStats(projects, async (repo) => {
+      asked.push(repo)
+      return { languages: [], activity: null }
+    })
+    expect(asked).toEqual(['Live'])
+    expect(result).toEqual([
+      { title: 'Live', status: 'in-progress', stats: { languages: [], activity: null } },
+      { title: 'Done', status: 'complete', stats: null },
+      { title: 'Old', status: 'archived', stats: null },
+    ])
+  })
+
+  it('fails when fetching stats fails', async () => {
+    await expect(addRepoStats([{ title: 'Live', status: 'in-progress' }], async () => {
+      throw new GitHubDataError('boom')
+    })).rejects.toThrow('boom')
   })
 })

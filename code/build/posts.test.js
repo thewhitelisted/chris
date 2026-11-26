@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { mkdtemp, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { parsePost, checkUniqueSlugs, sortNewestFirst, loadPosts, ContentError } from './posts.js'
+import { parsePost, checkUniqueSlugs, sortNewestFirst, loadPosts } from './posts.js'
+import { ContentError } from './frontmatter.js'
 
 const good = '---\ntitle: hello\ndate: 2025-06-18\ndescription: a post\n---\n\n# Heading\n\nBody text.\n'
 
@@ -70,7 +71,7 @@ describe('parsePost', () => {
     ['invalid YAML', frontmatter(['title: a: b', 'date: 2025-01-01', 'description: d']), /not valid YAML/],
     ['scalar frontmatter', frontmatter(['just text']), /must be key: value pairs/],
     ['empty frontmatter', '---\n\n---\nbody\n', /must be key: value pairs/],
-    ['empty body', frontmatter(['title: t', 'date: 2025-01-01', 'description: d'], '\n  \n'), /post body is empty/],
+    ['empty body', frontmatter(['title: t', 'date: 2025-01-01', 'description: d'], '\n  \n'), /body after the frontmatter is empty/],
     ['an unquoted " #" that YAML would cut off', frontmatter(['title: C# is #1', 'date: 2025-01-01', 'description: d']), /contains a YAML comment/],
     ['a trailing comment', frontmatter(['title: t', 'date: 2025-01-01', 'description: d # note']), /contains a YAML comment/],
     ['a comment after the date', frontmatter(['title: t', 'date: 2025-01-01 # c', 'description: d']), /contains a YAML comment/],
