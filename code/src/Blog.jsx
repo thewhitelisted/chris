@@ -38,7 +38,7 @@ function Blog() {
           <Search className="search-icon" size={14} />
           <input
             className="toolbar-search"
-            placeholder="Search posts"
+            placeholder="Search posts and devlogs"
             value={query}
             onChange={(e)=>setQuery(e.target.value)}
           />

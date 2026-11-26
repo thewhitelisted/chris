@@ -59,6 +59,10 @@ describe('Blog list with devlog entries', () => {
     expect(titles()).toEqual(['how i deal with having adhd', 'R&D <notes>', 'shelving it', 'first take', 'vol of vol', 'fills & <slippage>'])
   })
 
+  it('says in the search box that it searches devlogs too', () => {
+    expect(view.container.querySelector('.toolbar-search').getAttribute('placeholder')).toBe('Search posts and devlogs')
+  })
+
   it('finds entries by project and by "devlog", and posts by slug', async () => {
     await search('stealth')
     expect(titles()).toEqual(['fills & <slippage>', 'first take'])

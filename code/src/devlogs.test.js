@@ -16,6 +16,10 @@ describe('paths', () => {
     expect(entryBodyUrl(devlogs[0])).toBe('/devlogs/stealth-alpha/2026-11-20.md')
   })
 
+  it('percent-encodes the project and date in the body URL, like BlogPost does for slugs', () => {
+    expect(entryBodyUrl({ project: 'a b#c/d', date: '2026-11-20?x' })).toBe('/devlogs/a%20b%23c%2Fd/2026-11-20%3Fx.md')
+  })
+
   it('pluralises by count', () => {
     expect([0, 1, 2].map((n) => plural(n, 'update'))).toEqual(['0 updates', '1 update', '2 updates'])
   })
