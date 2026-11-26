@@ -4,13 +4,15 @@
 // - entries: zero, one, many across projects, dotfiles, nested folder, wrong extension, bad file name
 //   (prose, short, timestamp), impossible calendar date, frontmatter date equal / not equal to the name
 // - ordering: different dates, same date in two projects
+// - unknown-slug mode: fail (token set, listing complete) or skip (no token); in skip mode every other check still
+//   fails, inside skipped folders too (nested folder, bad name, date mismatch, frontmatter), and stray files still fail
 // - duplicates: same project and date (only reachable through checkUniqueDates; the file system keeps names unique)
 // Frontmatter rules themselves are shared with posts and covered in posts.test.js.
 import { describe, it, expect } from 'vitest'
 import { mkdtemp, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { parseDevlogEntry, checkUniqueDates, sortDevlogsNewestFirst, loadDevlogs, devlogIndex } from './devlogs.js'
+import { parseDevlogEntry, checkUniqueDates, sortDevlogsNewestFirst, loadDevlogs, devlogIndex, skippedDevlogsWarning } from './devlogs.js'
 import { ContentError } from './frontmatter.js'
 
 const entry = (date, title = 't', body = '# Body\n') => `---\ntitle: ${title}\ndate: ${date}\ndescription: d\n---\n\n${body}`
@@ -95,14 +97,19 @@ describe('sortDevlogsNewestFirst', () => {
 
 describe('loadDevlogs', () => {
   const slugs = ['pathos', 'crowdbook', 'financial-viscosity-indicator']
+  const strict = async (dir) => {
+    const { entries, skipped } = await loadDevlogs(dir, slugs, { skipUnknownProjects: false })
+    expect(skipped).toEqual([])
+    return entries
+  }
 
   it('returns no entries when the devlogs folder does not exist', async () => {
-    expect(await loadDevlogs(path.join(await devlogsDir({}), 'devlogs'), slugs)).toEqual([])
+    expect(await strict(path.join(await devlogsDir({}), 'devlogs'))).toEqual([])
   })
 
   it('returns no entries for an empty folder or an empty project folder', async () => {
-    expect(await loadDevlogs(await devlogsDir({}), slugs)).toEqual([])
-    expect(await loadDevlogs(await devlogsDir({ pathos: {} }), slugs)).toEqual([])
+    expect(await strict(await devlogsDir({}))).toEqual([])
+    expect(await strict(await devlogsDir({ pathos: {} }))).toEqual([])
   })
 
   it('loads entries across projects, newest first, ignoring dotfiles at both levels', async () => {
@@ -111,7 +118,7 @@ describe('loadDevlogs', () => {
       pathos: { '2026-10-01.md': entry('2026-10-01', 'old'), '2026-11-20.md': entry('2026-11-20', 'new'), '.DS_Store': 'junk' },
       'financial-viscosity-indicator': { '2026-11-20.md': entry('2026-11-20', 'fvi') },
     })
-    const loaded = await loadDevlogs(dir, slugs)
+    const loaded = await strict(dir)
     expect(loaded.map((e) => [e.project, e.date, e.title])).toEqual([
       ['financial-viscosity-indicator', '2026-11-20', 'fvi'],
       ['pathos', '2026-11-20', 'new'],
@@ -124,36 +131,88 @@ describe('loadDevlogs', () => {
 
   it('fails on a folder that is not a project slug, listing the slugs', async () => {
     const dir = await devlogsDir({ ghost: { '2026-11-20.md': entry('2026-11-20') } })
-    await expect(loadDevlogs(dir, slugs)).rejects.toThrow(`${path.join(dir, 'ghost')}: "ghost" is not a project slug; use one of: pathos, crowdbook, financial-viscosity-indicator`)
+    await expect(strict(dir)).rejects.toThrow(`${path.join(dir, 'ghost')}: "ghost" is not a project slug; use one of: pathos, crowdbook, financial-viscosity-indicator`)
   })
 
   it('matches the slug case-sensitively', async () => {
     const dir = await devlogsDir({ Pathos: { '2026-11-20.md': entry('2026-11-20') } })
-    await expect(loadDevlogs(dir, slugs)).rejects.toThrow(/"Pathos" is not a project slug/)
+    await expect(strict(dir)).rejects.toThrow(/"Pathos" is not a project slug/)
   })
 
   it('fails on a stray file beside the project folders', async () => {
     const dir = await devlogsDir({ 'README.md': 'x', pathos: {} })
-    await expect(loadDevlogs(dir, slugs)).rejects.toThrow(/README\.md: only project folders belong in the devlogs folder/)
+    await expect(strict(dir)).rejects.toThrow(/README\.md: only project folders belong in the devlogs folder/)
   })
 
   it('fails on a nested folder inside a project folder', async () => {
     const dir = await devlogsDir({ pathos: { drafts: { '2026-11-20.md': entry('2026-11-20') } } })
-    await expect(loadDevlogs(dir, slugs)).rejects.toThrow(/drafts: only YYYY-MM-DD\.md files belong in a project devlog folder/)
+    await expect(strict(dir)).rejects.toThrow(/drafts: only YYYY-MM-DD\.md files belong in a project devlog folder/)
   })
 
   it('fails on a stray file inside a project folder', async () => {
     const dir = await devlogsDir({ pathos: { 'notes.txt': 'x' } })
-    await expect(loadDevlogs(dir, slugs)).rejects.toThrow(/notes\.txt: devlog entries must be named YYYY-MM-DD\.md/)
+    await expect(strict(dir)).rejects.toThrow(/notes\.txt: devlog entries must be named YYYY-MM-DD\.md/)
   })
 
   it('fails when the devlogs path is a file', async () => {
     const dir = await devlogsDir({ devlogs: 'not a folder' })
-    await expect(loadDevlogs(path.join(dir, 'devlogs'), slugs)).rejects.toThrow(ContentError)
+    await expect(strict(path.join(dir, 'devlogs'))).rejects.toThrow(ContentError)
   })
 
   it('fails on one invalid entry among valid ones, naming it', async () => {
     const dir = await devlogsDir({ pathos: { '2026-11-20.md': entry('2026-11-20'), '2026-11-21.md': entry('2026-11-20') } })
-    await expect(loadDevlogs(dir, slugs)).rejects.toThrow(/2026-11-21\.md: frontmatter date 2026-11-20 does not match/)
+    await expect(strict(dir)).rejects.toThrow(/2026-11-21\.md: frontmatter date 2026-11-20 does not match/)
+  })
+})
+
+describe('loadDevlogs skipping unknown projects (no PORTFOLIO_REPOS_TOKEN)', () => {
+  const slugs = ['pathos']
+  const skipping = (dir) => loadDevlogs(dir, slugs, { skipUnknownProjects: true })
+
+  it('skips folders that match no listed project, keeps the rest, and names what it skipped', async () => {
+    const dir = await devlogsDir({
+      pathos: { '2026-11-20.md': entry('2026-11-20', 'kept') },
+      'secret-proj': { '2026-11-21.md': entry('2026-11-21', 'hidden') },
+      ghost: { '2026-11-22.md': entry('2026-11-22', 'also hidden') },
+    })
+    const { entries, skipped } = await skipping(dir)
+    expect(entries.map((e) => [e.project, e.title])).toEqual([['pathos', 'kept']])
+    expect(skipped.slice().sort()).toEqual(['ghost', 'secret-proj'])
+  })
+
+  it('skips an empty unknown folder too', async () => {
+    expect(await skipping(await devlogsDir({ ghost: {} }))).toEqual({ entries: [], skipped: ['ghost'] })
+  })
+
+  it('returns nothing skipped when every folder is known', async () => {
+    expect((await skipping(await devlogsDir({ pathos: { '2026-11-20.md': entry('2026-11-20') } }))).skipped).toEqual([])
+  })
+
+  it.each([
+    ['a nested folder', { drafts: {} }, /drafts: only YYYY-MM-DD\.md files belong/],
+    ['a bad file name', { 'notes.md': entry('2026-11-20') }, /notes\.md: devlog entries must be named YYYY-MM-DD\.md/],
+    ['a date mismatch', { '2026-11-20.md': entry('2026-11-21') }, /frontmatter date 2026-11-21 does not match the file name date 2026-11-20/],
+    ['broken frontmatter', { '2026-11-20.md': '---\ntitle: t\ndate: 2026-11-20\n---\n\nbody\n' }, /missing frontmatter field "description"/],
+    ['an empty body', { '2026-11-20.md': entry('2026-11-20', 't', '\n') }, /body after the frontmatter is empty/],
+  ])('still fails on %s inside a skipped folder', async (_name, files, message) => {
+    const dir = await devlogsDir({ 'secret-proj': files })
+    await expect(skipping(dir)).rejects.toThrow(message)
+  })
+
+  it('still fails on a stray file beside the project folders', async () => {
+    await expect(skipping(await devlogsDir({ 'notes.md': 'x' }))).rejects.toThrow(/only project folders belong/)
+  })
+
+  it('returns nothing for a missing folder', async () => {
+    expect(await skipping(path.join(await devlogsDir({}), 'devlogs'))).toEqual({ entries: [], skipped: [] })
+  })
+})
+
+describe('skippedDevlogsWarning', () => {
+  it('names each skipped folder and the missing token', () => {
+    expect(skippedDevlogsWarning(['a', 'b'])).toBe(
+      'devlogs: skipped devlogs/a, devlogs/b: no listed project has that slug. ' +
+        'PORTFOLIO_REPOS_TOKEN is not set, so private repos are not listed; set it to build their devlogs',
+    )
   })
 })

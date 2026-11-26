@@ -32,30 +32,42 @@ async function listFolder(dir) {
   return (await readdir(dir, { withFileTypes: true })).filter((entry) => !entry.name.startsWith('.'))
 }
 
-export async function loadDevlogs(dir, projectSlugs) {
+export async function loadDevlogs(dir, projectSlugs, { skipUnknownProjects }) {
   let projectFolders
   try {
     projectFolders = await listFolder(dir)
   } catch (err) {
-    if (err.code === 'ENOENT') return []
+    if (err.code === 'ENOENT') return { entries: [], skipped: [] }
     if (err.code === 'ENOTDIR') throw new ContentError(dir, 'must be a folder of project folders')
     throw err
   }
   const entries = []
+  const skipped = []
   for (const folder of projectFolders) {
     const folderPath = path.join(dir, folder.name)
     if (!folder.isDirectory()) throw new ContentError(folderPath, 'only project folders belong in the devlogs folder')
-    if (!projectSlugs.includes(folder.name)) {
+    const known = projectSlugs.includes(folder.name)
+    if (!known && !skipUnknownProjects) {
       throw new ContentError(folderPath, `"${folder.name}" is not a project slug; use one of: ${projectSlugs.join(', ')}`)
     }
+    const folderEntries = []
     for (const item of await listFolder(folderPath)) {
       const file = path.join(folderPath, item.name)
       if (!item.isFile()) throw new ContentError(file, 'only YYYY-MM-DD.md files belong in a project devlog folder')
-      entries.push(parseDevlogEntry(file, await readFile(file, 'utf8')))
+      folderEntries.push(parseDevlogEntry(file, await readFile(file, 'utf8')))
     }
+    checkUniqueDates(folderEntries)
+    if (known) entries.push(...folderEntries)
+    else skipped.push(folder.name)
   }
-  checkUniqueDates(entries)
-  return sortDevlogsNewestFirst(entries)
+  return { entries: sortDevlogsNewestFirst(entries), skipped }
+}
+
+export function skippedDevlogsWarning(skipped) {
+  return (
+    `devlogs: skipped ${skipped.map((name) => `devlogs/${name}`).join(', ')}: no listed project has that slug. ` +
+    'PORTFOLIO_REPOS_TOKEN is not set, so private repos are not listed; set it to build their devlogs'
+  )
 }
 
 export function devlogIndex(entries) {

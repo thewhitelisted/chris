@@ -574,6 +574,12 @@ describe('commitActivity', () => {
       expect(activity.last30Days).toBe(1)
     })
 
+    it('accepts a newest week that starts exactly at the build time', () => {
+      const weeks = weeksEnding('2026-11-22', (day) => (day === '2026-11-22' ? 2 : 0))
+      expect(commitActivity(weeks, 'r', at('2026-11-22T00:00:00.000Z'))).toEqual({ weekly: [...Array(51).fill(0), 2], last30Days: 2 })
+      expect(() => commitActivity(weeks, 'r', at('2026-11-21T23:59:59.999Z'))).toThrow(/has a week starting after the build time/)
+    })
+
     it('still fails when built before that week starts', () => {
       expect(() => commitActivity(early(), 'r', at('2026-11-28T22:59:59.999Z'))).toThrow(/has a week starting after the build time/)
     })

@@ -124,6 +124,26 @@ describe('renderRss', () => {
       expect(items[4].title).toBe(`${nasty} devlog: revisit`)
     })
 
+    it('orders same-date items by link whatever order they arrive in', () => {
+      const rss = parseRss(renderRss({
+        siteUrl: SITE,
+        title: 't',
+        description: 'd',
+        posts: [{ slug: 'zeta', title: 'z', date: '2026-01-01', description: 'd' }, { slug: 'alpha', title: 'a', date: '2026-01-01', description: 'd' }],
+        devlogs: [
+          { project: 'pathos', date: '2026-01-01', title: 'p', description: 'd' },
+          { project: 'fvi', date: '2026-01-01', title: 'f', description: 'd' },
+        ],
+        projects,
+      })).rss
+      expect(rss.channel.item.map((i) => i.link)).toEqual([
+        `${SITE}/blog/alpha`,
+        `${SITE}/blog/zeta`,
+        `${SITE}/projects/fvi/2026-01-01`,
+        `${SITE}/projects/pathos/2026-01-01`,
+      ])
+    })
+
     it('lists entries alone when there are no posts', () => {
       expect(parseRss(render({ posts: [] })).rss.channel.item).toHaveLength(3)
     })

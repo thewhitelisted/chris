@@ -36,7 +36,14 @@ beforeAll(async () => {
 
 afterAll(() => new Promise((resolve) => server.close(resolve)))
 
-function serveGitHub({ repos, status = 200, delayMs = 0, languages = () => [200, recordedLanguages], activity = () => [200, recordedActivity] }) {
+function serveGitHub({
+  repos,
+  userRepos = repos,
+  status = 200,
+  delayMs = 0,
+  languages = () => [200, recordedLanguages],
+  activity = () => [200, recordedActivity],
+}) {
   const seen = []
   respond = (req, res) => {
     seen.push({ url: req.url, auth: req.headers.authorization })
@@ -44,7 +51,7 @@ function serveGitHub({ repos, status = 200, delayMs = 0, languages = () => [200,
       ? languages()
       : req.url.endsWith('/stats/commit_activity')
         ? activity()
-        : [status, repos]
+        : [status, req.url.startsWith('/user/repos') ? userRepos : repos]
     setTimeout(() => {
       res.writeHead(code, { 'content-type': 'application/json' })
       res.end(code === 204 ? undefined : JSON.stringify(body))
@@ -351,11 +358,65 @@ describe('vite build with stats that GitHub has not computed', () => {
   }, 60000)
 })
 
+describe('vite build with a devlog for a private repo', () => {
+  const secret = {
+    ...recordedTagged.find((r) => r.name === 'crowdbook'),
+    name: 'secret-proj',
+    private: true,
+    html_url: 'https://github.com/thewhitelisted/secret-proj',
+    description: 'A private project',
+    topics: ['portfolio', 'in-progress'],
+  }
+  const devlogs = {
+    'secret-proj': { '2026-11-21.md': entry('2026-11-21', 'hidden take', '# Secret body\n') },
+    pathos: { '2026-11-20.md': entry('2026-11-20', 'public take') },
+  }
+
+  it('includes it when PORTFOLIO_REPOS_TOKEN lists the repo', async () => {
+    serveGitHub({ repos: recordedTagged, userRepos: [...recordedTagged, secret] })
+    const site = await build({ PORTFOLIO_REPOS_TOKEN: 'pat' }, await scratchProject({ script: true, devlogs }), 'warn')
+    expect(site.code).toBe(0)
+    expect(site.output).not.toMatch(/skipped/)
+    expect(await site.read('devlogs/secret-proj/2026-11-21.md')).toBe('# Secret body\n')
+    expect(await site.read('rss.xml')).toContain('secret-proj devlog: hidden take')
+    expect(await site.read('projects/secret-proj/2026-11-21/index.html')).toContain('secret-proj devlog: hidden take')
+  }, 60000)
+
+  it.each([
+    ['unset', {}],
+    ['empty', { PORTFOLIO_REPOS_TOKEN: '', GITHUB_TOKEN: 'actions-token' }],
+  ])('skips it with a warning when PORTFOLIO_REPOS_TOKEN is %s, leaving it out of every output', async (_label, env) => {
+    serveGitHub({ repos: recordedTagged, userRepos: [...recordedTagged, secret] })
+    const site = await build(env, await scratchProject({ script: true, devlogs }), 'warn')
+    expect(site.code).toBe(0)
+    expect(site.output).toMatch(/devlogs: skipped devlogs\/secret-proj: no listed project has that slug\. PORTFOLIO_REPOS_TOKEN is not set/)
+    await expect(site.read('devlogs/secret-proj/2026-11-21.md')).rejects.toThrow(/ENOENT/)
+    await expect(site.read('projects/secret-proj/2026-11-21/index.html')).rejects.toThrow(/ENOENT/)
+    await expect(site.read('projects/secret-proj/index.html')).rejects.toThrow(/ENOENT/)
+    const rss = await site.read('rss.xml')
+    expect(rss).not.toContain('hidden take')
+    expect(rss).toContain('Pathos devlog: public take')
+    const js = await bundledJs(site)
+    expect(js).not.toContain('hidden take')
+    expect(js).not.toContain('secret-proj')
+    expect(js).toContain('public take')
+    expect(await site.read('devlogs/pathos/2026-11-20.md')).toBe('# body\n')
+  }, 60000)
+
+  it('still fails on a broken entry inside a skipped folder', async () => {
+    serveGitHub({ repos: recordedTagged })
+    const project = await scratchProject({ devlogs: { 'secret-proj': { '2026-11-21.md': entry('2026-11-22', 'x') } } })
+    const { code, output } = await build({}, project)
+    expect(code).not.toBe(0)
+    expect(output).toMatch(/secret-proj\/2026-11-21\.md: frontmatter date 2026-11-22 does not match the file name date 2026-11-21/)
+  }, 60000)
+})
+
 describe('vite build failure paths', () => {
-  it('fails when a devlog folder is not a project slug', async () => {
+  it('fails when a devlog folder is not a project slug and PORTFOLIO_REPOS_TOKEN is set', async () => {
     serveJson(recordedTagged)
     const project = await scratchProject({ devlogs: { ghost: { '2026-11-20.md': entry('2026-11-20', 'x') } } })
-    const { code, output } = await build({}, project)
+    const { code, output } = await build({ PORTFOLIO_REPOS_TOKEN: 'pat' }, project)
     expect(code).not.toBe(0)
     expect(output).toMatch(/devlogs\/ghost: "ghost" is not a project slug; use one of: crowdbook, pathos, financial-viscosity-indicator/)
   }, 60000)
@@ -465,13 +526,13 @@ async function hmrSocket(base) {
   return { messages, close: () => socket.close() }
 }
 
-async function startDev(project) {
+async function startDev(project, env = {}) {
   const port = await freePort()
   const dev = { base: `http://127.0.0.1:${port}`, output: '' }
   dev.process = spawn(
     process.execPath,
     [vite, 'serve', project.root, '--config', project.config, '--host', '127.0.0.1', '--port', String(port), '--strictPort'],
-    { cwd: root, env: { PATH: process.env.PATH, GITHUB_API_URL: apiUrl } },
+    { cwd: root, env: { PATH: process.env.PATH, GITHUB_API_URL: apiUrl, ...env } },
   )
   dev.process.stdout.on('data', (chunk) => { dev.output += chunk })
   dev.process.stderr.on('data', (chunk) => { dev.output += chunk })
@@ -647,24 +708,52 @@ describe('dev server devlogs', () => {
     expect(ourMessages(fresh()).at(-1)).toEqual({ type: 'full-reload' })
   }, 30000)
 
-  it('reports a folder that is not a project, keeps reporting it when a post changes, and recovers when it is removed', async () => {
+  it('skips a folder that is not a project, with a warning, when PORTFOLIO_REPOS_TOKEN is not set', async () => {
     fresh()
     await mkdir(path.join(project.devlogsDir, 'ghost'))
-    await until(async () => dev.output.includes('"ghost" is not a project slug'), 'the error in the terminal')
+    await writeFile(entryFile('ghost', '2026-11-22.md'), entry('2026-11-22', 'ghost take'))
+    await until(async () => dev.output.includes('skipped devlogs/ghost: no listed project has that slug'), 'the warning in the terminal')
+    await until(async () => ourMessages(hmr.messages).some((m) => m.type === 'full-reload'), 'a reload')
+    expect(ourMessages(fresh()).every((m) => m.type === 'full-reload')).toBe(true)
+    expect(await index()).not.toContain('ghost')
+    expect((await get(`${dev.base}/devlogs/ghost/2026-11-22.md`)).status).toBe(404)
+    expect((await get(`${dev.base}/devlogs/${FVI}/2026-11-20.md`)).status).toBe(200)
+
+    await writeFile(entryFile('ghost', '2026-11-23.md'), entry('2026-11-24', 'x'))
+    await until(async () => (await get(`${dev.base}/devlogs/${FVI}/2026-11-20.md`)).status === 500, 'the error inside the skipped folder')
+    expect((await get(`${dev.base}/devlogs/${FVI}/2026-11-20.md`)).text).toMatch(/2026-11-23\.md: frontmatter date 2026-11-24 does not match/)
+    await rm(path.join(project.devlogsDir, 'ghost'), { recursive: true })
+    await until(async () => (await get(`${dev.base}/devlogs/${FVI}/2026-11-20.md`)).status === 200, 'recovery')
+  }, 30000)
+
+  it('reports a stray file, shows the post error first while both are broken, and recovers', async () => {
+    fresh()
+    await writeFile(path.join(project.devlogsDir, 'notes.md'), 'x')
+    await until(async () => dev.output.includes('notes.md: only project folders belong'), 'the error in the terminal')
     await until(async () => ourMessages(hmr.messages).some((m) => m.type === 'error'), 'the error overlay message')
-    expect(ourMessages(fresh()).at(-1).err.message).toMatch(/ghost: "ghost" is not a project slug/)
+    expect(ourMessages(fresh()).at(-1).err.message).toMatch(/notes\.md: only project folders belong/)
     const broken = await get(`${dev.base}/devlogs/${FVI}/2026-11-20.md`)
     expect(broken.status).toBe(500)
-    expect(broken.text).toMatch(/"ghost" is not a project slug/)
+    expect(broken.text).toMatch(/notes\.md: only project folders belong/)
     expect((await get(`${dev.base}/@id/__x00__virtual:devlogs`)).status).toBe(500)
     expect((await get(`${dev.base}/posts/a.md`)).status).toBe(200)
 
     await writeFile(path.join(project.postsDir, 'a.md'), post('a', '# A again\n'))
     await until(async () => (await get(`${dev.base}/posts/a.md`)).text === '# A again\n', 'the post edit')
     await until(async () => ourMessages(hmr.messages).length > 0, 'the hot message after the post edit')
-    expect(ourMessages(fresh()).at(-1).type).toBe('error')
+    expect(ourMessages(fresh()).at(-1).err.message).toMatch(/notes\.md: only project folders belong/)
 
-    await rm(path.join(project.devlogsDir, 'ghost'), { recursive: true })
+    await writeFile(path.join(project.postsDir, 'z.md'), '---\ntitle: z\ndate: 2025-01-01\n---\n\nbody\n')
+    await until(async () => (await get(`${dev.base}/posts/a.md`)).status === 500, 'the post error')
+    await until(async () => ourMessages(hmr.messages).length > 0, 'the hot message for the post error')
+    expect(ourMessages(fresh()).at(-1).err.message).toMatch(/z\.md: missing frontmatter field "description"/)
+
+    await rm(path.join(project.postsDir, 'z.md'))
+    await until(async () => (await get(`${dev.base}/posts/a.md`)).status === 200, 'the post recovery')
+    await until(async () => ourMessages(hmr.messages).length > 0, 'the hot message after the post fix')
+    expect(ourMessages(fresh()).at(-1).err.message).toMatch(/notes\.md: only project folders belong/)
+
+    await rm(path.join(project.devlogsDir, 'notes.md'))
     await until(async () => (await get(`${dev.base}/devlogs/${FVI}/2026-11-20.md`)).status === 200, 'recovery')
     await until(async () => ourMessages(hmr.messages).some((m) => m.type === 'full-reload'), 'the reload after the fix')
   }, 30000)
@@ -686,6 +775,24 @@ describe('dev server devlogs', () => {
     await rm(project.devlogsDir, { recursive: true })
     await until(async () => (await index()).includes('export const devlogs = []'), 'no entries after removing devlogs/')
   }, 30000)
+})
+
+describe('dev server devlogs with PORTFOLIO_REPOS_TOKEN', () => {
+  it('reports a folder that is not a project as an error, because the listing is complete', async () => {
+    serveJson(recordedTagged)
+    const project = await scratchProject({ posts: { 'a.md': post('a') } })
+    const dev = await startDev(project, { PORTFOLIO_REPOS_TOKEN: 'pat' })
+    try {
+      await until(async () => (await get(`${dev.base}/posts/a.md`)).status === 200, 'the dev server')
+      await mkdir(path.join(project.devlogsDir, 'ghost'), { recursive: true })
+      await until(async () => (await get(`${dev.base}/devlogs/ghost/2026-11-20.md`)).status === 500, 'the error')
+      expect((await get(`${dev.base}/devlogs/ghost/2026-11-20.md`)).text).toMatch(/ghost: "ghost" is not a project slug/)
+      expect(dev.output).not.toMatch(/skipped devlogs/)
+    } finally {
+      dev.process.kill()
+      await rm(project.dir, { recursive: true, force: true })
+    }
+  }, 60000)
 })
 
 describe('dev server startup', () => {

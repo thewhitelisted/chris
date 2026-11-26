@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { loadPosts } from './posts.js'
-import { loadDevlogs, devlogIndex } from './devlogs.js'
+import { loadDevlogs, devlogIndex, skippedDevlogsWarning } from './devlogs.js'
 import { fetchOwnerRepos, selectPortfolioProjects, addRepoStats, fetchRepoStats } from './github.js'
 import { validateHandKept, mergeProjects, allowNoGitHubProjects } from './projects.js'
 import { renderRss, headTags, withHead, pageFiles } from './feeds.js'
@@ -34,8 +34,17 @@ export async function loadContent({ root, postsDir, devlogsDir, env, warn }) {
     validateHandKept(handKeptProjects, path.join(root, 'public')),
     { allowNoGitHubProjects: allowNoGitHubProjects(env) },
   )
-  const devlogs = await loadDevlogs(devlogsDir, projects.map((project) => project.slug))
-  return { posts, projects, devlogs }
+  const skipUnknownDevlogs = !privateToken
+  const devlogs = await loadProjectDevlogs({ devlogsDir, projects, skipUnknownDevlogs, warn })
+  return { posts, projects, devlogs, skipUnknownDevlogs }
+}
+
+export async function loadProjectDevlogs({ devlogsDir, projects, skipUnknownDevlogs, warn }) {
+  const { entries, skipped } = await loadDevlogs(devlogsDir, projects.map((project) => project.slug), {
+    skipUnknownProjects: skipUnknownDevlogs,
+  })
+  if (skipped.length) warn(skippedDevlogsWarning(skipped))
+  return entries
 }
 
 export function postResponse(url, posts, postsError) {
@@ -138,7 +147,12 @@ export default function contentPlugin({ postsDir, devlogsDir }) {
 
       const reloadDevlogs = async () => {
         try {
-          content.devlogs = await loadDevlogs(devlogsDir, content.projects.map((project) => project.slug))
+          content.devlogs = await loadProjectDevlogs({
+            devlogsDir,
+            projects: content.projects,
+            skipUnknownDevlogs: content.skipUnknownDevlogs,
+            warn: (message) => server.config.logger.warn(`[site-content] ${message}`, { timestamp: true }),
+          })
           devlogsError = null
         } catch (err) {
           devlogsError = reported(err)
