@@ -3,7 +3,7 @@
 // - .renames.json: missing, valid, invalid JSON, not an object (array, null, string), a key or value that is not a
 //   lowercase repo name (uppercase, slash, empty, number), a self map, a chain (value is also a key)
 // - recorded old slug that is a project slug again (fails the build) or is not (fine)
-// - folders: a project slug (never looked up), unknown and GitHub has no repo, unknown and the same name (not renamed),
+// - folders: a project slug (never looked up), a mis-cased or non-repo name (never looked up), unknown and GitHub has no repo, unknown and the same name (not renamed),
 //   renamed to a portfolio project, renamed to a repo that is not a portfolio project, renamed to a slug whose folder
 //   already exists, two folders renamed to one repo, dot folders, loose files, no devlogs folder
 // - recording: first rename, renaming a renamed project again (chain collapses), renaming back to an old name
@@ -179,6 +179,15 @@ describe('planFolderRenames', () => {
     expect(asked).toEqual(['old-crowdbook', 'ghost', 'plain', 'untagged'])
   })
 
+  it('leaves folders that are not lowercase repo names alone, without looking them up', async () => {
+    const { asked, lookupSlug } = lookup()
+    expect(await planFolderRenames('/d', ['Old-Pathos', 'PATHOS', 'a b'], slugs, async (name) => {
+      await lookupSlug(name)
+      return name.toLowerCase()
+    })).toEqual([])
+    expect(asked).toEqual([])
+  })
+
   it('fails when the new folder already exists', async () => {
     await expect(planFolderRenames('/d', ['crowdbook', 'old-crowdbook'], slugs, lookup().lookupSlug))
       .rejects.toThrow(/old-crowdbook: the repo was renamed to crowdbook, but devlogs\/crowdbook is also that project/)
@@ -211,6 +220,12 @@ describe('syncRenames', () => {
     expect(await readFile(path.join(dir, 'crowdbook', '2026-11-19.md'), 'utf8')).toBe('c')
     expect(JSON.parse(await readFile(path.join(dir, RENAMES_FILE), 'utf8')))
       .toEqual({ 'old-crowdbook': 'crowdbook', 'old-pathos': 'pathos', 'older-pathos': 'pathos', z: 'crowdbook' })
+  })
+
+  it('does not move a mis-cased folder of a project, leaving it for the build to report', async () => {
+    const dir = await tree({ Pathos: { '2026-11-20.md': 'p' } })
+    expect(await syncRenames({ devlogsDir: dir, projectSlugs: slugs, lookupSlug: async (name) => name.toLowerCase() })).toEqual([])
+    expect(await readdir(dir)).toEqual(['Pathos'])
   })
 
   it('changes nothing, and writes no file, when no folder was renamed', async () => {

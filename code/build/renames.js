@@ -93,10 +93,12 @@ export function serializeRenames(renames) {
 }
 
 // lookupSlug(folder) gives the slug of the repo GitHub serves under that name (following a rename), or null.
+// Folders that are not lowercase repo names are left alone: GitHub matches names without case, so a mis-cased folder
+// would look renamed. The build reports them as unknown slugs instead.
 export async function planFolderRenames(dir, folders, projectSlugs, lookupSlug) {
   const plan = []
   for (const folder of folders) {
-    if (projectSlugs.includes(folder)) continue
+    if (projectSlugs.includes(folder) || !SLUG.test(folder)) continue
     const slug = await lookupSlug(folder)
     if (slug === null || slug === folder || !projectSlugs.includes(slug)) continue
     const other = folders.includes(slug) ? slug : plan.find((step) => step.to === slug)?.from
