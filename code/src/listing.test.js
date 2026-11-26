@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { INITIAL_SORT, nextSort, sortItems, filterItems } from './listing.js'
+import { INITIAL_SORT, PROJECTS_INITIAL_SORT, nextSort, sortItems, filterItems } from './listing.js'
 
 const items = [
   { title: 'beta', date: '2025-03', type: 'Tool', tags: ['Rust'] },
@@ -44,6 +44,24 @@ describe('sortItems', () => {
   it('sorts by type in both directions', () => {
     expect(titles(sortItems(items, { key: 'type', dir: 'asc' }))).toEqual(['alpha', 'delta', 'beta', 'gamma'])
     expect(titles(sortItems(items, { key: 'type', dir: 'desc' }))).toEqual(['beta', 'gamma', 'delta', 'alpha'])
+  })
+
+  it('sorts projects by status, in-progress first, newest first within a status', () => {
+    const projects = [
+      { title: 'old-done', date: '2024-01', status: 'complete' },
+      { title: 'shelved', date: '2025-09', status: 'archived' },
+      { title: 'wip-old', date: '2025-01', status: 'in-progress' },
+      { title: 'new-done', date: '2026-02', status: 'complete' },
+      { title: 'wip-new', date: '2026-10', status: 'in-progress' },
+    ]
+    expect(PROJECTS_INITIAL_SORT).toEqual({ key: 'status', dir: 'asc' })
+    expect(titles(sortItems(projects, PROJECTS_INITIAL_SORT))).toEqual(['wip-new', 'wip-old', 'new-done', 'old-done', 'shelved'])
+    expect(titles(sortItems(projects, { key: 'status', dir: 'desc' }))).toEqual(['shelved', 'old-done', 'new-done', 'wip-old', 'wip-new'])
+    expect(nextSort(INITIAL_SORT, 'status')).toEqual({ key: 'status', dir: 'asc' })
+  })
+
+  it('rejects an unknown project status when sorting by status', () => {
+    expect(() => sortItems([{ title: 'a', date: '2025-01', status: 'done' }, { title: 'b', date: '2025-02', status: 'complete' }], PROJECTS_INITIAL_SORT)).toThrow('Unknown project status: "done"')
   })
 
   it('does not mutate its input', () => {

@@ -44,7 +44,7 @@ describe('checkLink', () => {
 
 describe('validateHandKept', () => {
   it('accepts the real hand-kept list, which is only the financial viscosity indicator', () => {
-    expect(validateHandKept(handKeptProjects, publicDir)).toBe(handKeptProjects)
+    expect(validateHandKept(handKeptProjects, publicDir)).toEqual(handKeptProjects.map((p) => ({ ...p, status: 'complete', private: false })))
     expect(handKeptProjects).toEqual([{
       title: 'financial viscosity indicator',
       date: '2025-04',
@@ -76,8 +76,21 @@ describe('validateHandKept', () => {
     [{ title: 'a\u0000b' }, /hand-kept project s: contains the control character U\+0000/],
     [{ description: 'a\u001Bb' }, /hand-kept project s: contains the control character U\+001B/],
     [{ technologies: ['ok', 'b\uFFFE'] }, /hand-kept project s: contains the control character U\+FFFE/],
+    [{ updated: 'soon' }, /hand-kept project s: "updated" Expected YYYY-MM or YYYY-MM-DD, got "soon"/],
+    [{ updated: '2026-02-30' }, /hand-kept project s: "updated" Invalid day/],
+    [{ status: 'done' }, /hand-kept project s: "status" must be one of in-progress, complete, archived, got "done"/],
+    [{ status: undefined }, /"status" must be one of/],
+    [{ private: true }, /hand-kept project s: "private" is only set for GitHub repos/],
   ])('rejects %j', (overrides, message) => {
     expect(() => validateHandKept([project(overrides)], publicDir)).toThrow(message)
+  })
+
+  it.each(['in-progress', 'complete', 'archived'])('keeps status %s', (status) => {
+    expect(validateHandKept([project({ status })], publicDir)[0].status).toBe(status)
+  })
+
+  it('defaults status to complete and marks the project public', () => {
+    expect(validateHandKept([project()], publicDir)[0]).toMatchObject({ status: 'complete', private: false })
   })
 
   it('rejects a non-array', () => {
@@ -94,7 +107,7 @@ describe('mergeProjects', () => {
   })
 
   it('fails when no repo is tagged, unless explicitly allowed', () => {
-    expect(() => mergeProjects([], kept, { allowNoGitHubProjects: false })).toThrow(/no public GitHub repo has the portfolio topic.*ALLOW_NO_GITHUB_PROJECTS=1/)
+    expect(() => mergeProjects([], kept, { allowNoGitHubProjects: false })).toThrow(/no GitHub repo has the portfolio topic.*ALLOW_NO_GITHUB_PROJECTS=1/)
     expect(mergeProjects([], kept, { allowNoGitHubProjects: true })).toEqual(kept)
   })
 

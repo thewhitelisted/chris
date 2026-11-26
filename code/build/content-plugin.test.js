@@ -175,6 +175,62 @@ describe('vite build with the content plugin', () => {
   })
 })
 
+describe('vite build with private repos', () => {
+  const privateRepo = {
+    ...recordedTagged.find((r) => r.name === 'crowdbook'),
+    name: 'stealth-alpha',
+    private: true,
+    html_url: 'https://github.com/thewhitelisted/stealth-alpha',
+    description: 'A private strategy in progress',
+    topics: ['portfolio', 'in-progress'],
+    default_branch: 'secret-branch-name',
+  }
+
+  function recordRequests(body, status = 200) {
+    const seen = []
+    respond = (req, res) => {
+      seen.push({ url: req.url, auth: req.headers.authorization })
+      res.writeHead(status, { 'content-type': 'application/json' })
+      res.end(JSON.stringify(body))
+    }
+    return seen
+  }
+
+  async function bundledJs(site) {
+    const assets = await readdir(path.join(site.outDir, 'assets'))
+    return (await Promise.all(assets.filter((f) => f.endsWith('.js')).map((f) => site.read(`assets/${f}`)))).join('\n')
+  }
+
+  it('lists repos through /user/repos with PORTFOLIO_REPOS_TOKEN and bundles a tagged private repo without its code link', async () => {
+    const seen = recordRequests([...recordedTagged, privateRepo])
+    const site = await build({ PORTFOLIO_REPOS_TOKEN: 'pat-value', GITHUB_TOKEN: 'actions-token' })
+    expect(site.output).toBe('')
+    expect(site.code).toBe(0)
+    expect(seen).toEqual([{ url: '/user/repos?affiliation=owner&visibility=all&per_page=100&page=1', auth: 'Bearer pat-value' }])
+    const js = await bundledJs(site)
+    expect(js).toContain('title:"stealth-alpha"')
+    expect(js).toMatch(/status:"in-progress",private:!0/)
+    expect(js).not.toContain('github.com/thewhitelisted/stealth-alpha')
+    expect(js).not.toContain('secret-branch-name')
+    expect(js).not.toContain('pat-value')
+    expect(js).toContain('github:"https://github.com/thewhitelisted/crowdbook"')
+  }, 60000)
+
+  it('uses the public endpoint with GITHUB_TOKEN when PORTFOLIO_REPOS_TOKEN is empty', async () => {
+    const seen = recordRequests(recordedTagged)
+    const site = await build({ PORTFOLIO_REPOS_TOKEN: '', GITHUB_TOKEN: 'actions-token' })
+    expect(site.code).toBe(0)
+    expect(seen).toEqual([{ url: '/users/thewhitelisted/repos?type=owner&per_page=100&page=1', auth: 'Bearer actions-token' }])
+  }, 60000)
+
+  it('fails, naming the secret, when PORTFOLIO_REPOS_TOKEN is rejected', async () => {
+    recordRequests({ message: 'Bad credentials' }, 401)
+    const { code, output } = await build({ PORTFOLIO_REPOS_TOKEN: 'expired' })
+    expect(code).not.toBe(0)
+    expect(output).toMatch(/HTTP 401 \(PORTFOLIO_REPOS_TOKEN is expired, revoked or wrong; replace the secret\)/)
+  }, 60000)
+})
+
 describe('vite build failure paths', () => {
   it('fails when the GitHub API errors', async () => {
     serveJson({ message: 'API rate limit exceeded' }, 403)
@@ -210,7 +266,7 @@ describe('vite build failure paths', () => {
     serveJson(recorded)
     const refused = await build()
     expect(refused.code).not.toBe(0)
-    expect(refused.output).toMatch(/no public GitHub repo has the portfolio topic/)
+    expect(refused.output).toMatch(/no GitHub repo has the portfolio topic/)
 
     const allowed = await build({ ALLOW_NO_GITHUB_PROJECTS: '1' })
     expect(allowed.code).toBe(0)

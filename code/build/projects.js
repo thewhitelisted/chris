@@ -2,6 +2,7 @@ import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { formatDate } from '../src/dates.js'
 import { invalidXmlChar } from './text.js'
+import { STATUSES } from '../src/projectStatus.js'
 
 const LINK_FIELDS = ['github', 'live', 'report']
 const REQUIRED_STRINGS = ['slug', 'title', 'date', 'description', 'type', 'color']
@@ -61,8 +62,21 @@ export function validateHandKept(projects, publicDir) {
       const problem = checkLink(project[field], publicDir)
       if (problem) throw new ProjectsError(`hand-kept project ${label}: "${field}" ${problem}`)
     }
+    if ('updated' in project) {
+      try {
+        formatDate(project.updated)
+      } catch (err) {
+        throw new ProjectsError(`hand-kept project ${label}: "updated" ${err.message}`)
+      }
+    }
+    if ('status' in project && !STATUSES.includes(project.status)) {
+      throw new ProjectsError(`hand-kept project ${label}: "status" must be one of ${STATUSES.join(', ')}, got ${JSON.stringify(project.status)}`)
+    }
+    if ('private' in project) {
+      throw new ProjectsError(`hand-kept project ${label}: "private" is only set for GitHub repos; leave out the github link instead`)
+    }
   }
-  return projects
+  return projects.map((project) => ({ status: 'complete', ...project, private: false }))
 }
 
 export function allowNoGitHubProjects(env) {
@@ -72,7 +86,7 @@ export function allowNoGitHubProjects(env) {
 export function mergeProjects(fromGitHub, handKept, { allowNoGitHubProjects }) {
   if (fromGitHub.length === 0 && !allowNoGitHubProjects) {
     throw new ProjectsError(
-      'no public GitHub repo has the portfolio topic, so the featured projects would disappear. ' +
+      'no GitHub repo has the portfolio topic, so the featured projects would disappear. ' +
         'Add the topic to the repos to feature, or set ALLOW_NO_GITHUB_PROJECTS=1 to build without them.',
     )
   }

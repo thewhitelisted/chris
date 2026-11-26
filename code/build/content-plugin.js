@@ -15,7 +15,13 @@ const POST_URL = /^\/posts\/([^?#]*)/
 
 export async function loadContent({ root, postsDir, env }) {
   const posts = await loadPosts(postsDir)
-  const repos = await fetchOwnerRepos({ user: GITHUB_USER, token: env.GITHUB_TOKEN, apiUrl: env.GITHUB_API_URL })
+  const privateToken = env.PORTFOLIO_REPOS_TOKEN
+  const repos = await fetchOwnerRepos({
+    user: GITHUB_USER,
+    token: privateToken || env.GITHUB_TOKEN,
+    includePrivate: Boolean(privateToken),
+    apiUrl: env.GITHUB_API_URL,
+  })
   const projects = mergeProjects(
     selectPortfolioProjects(repos, PORTFOLIO_TOPIC),
     validateHandKept(handKeptProjects, path.join(root, 'public')),

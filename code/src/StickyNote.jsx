@@ -1,7 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ExternalLink, Github, X, FileText } from 'lucide-react'
+import { ExternalLink, Github, X, FileText, Lock } from 'lucide-react'
 import { formatDate } from './dates.js'
+import { statusLabel } from './projectStatus.js'
+
+function dateLine(project) {
+  if (project.status !== 'in-progress') return formatDate(project.date)
+  const started = `Started ${formatDate(project.date)}`
+  return project.updated ? `${started} · Last updated ${formatDate(project.updated)}` : started
+}
 
 function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront }) {
   const [position, setPosition] = useState(initialPosition)
@@ -90,7 +97,8 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
       
       <div className="sticky-note-content">
         <h3 className="sticky-note-title">{project.title}</h3>
-        <div className="sticky-note-date">{formatDate(project.date)}</div>
+        <div className="sticky-note-date">{dateLine(project)}</div>
+        {project.status !== 'complete' && <div className="sticky-note-status">{statusLabel(project.status)}</div>}
         
         <p className="sticky-note-description">{project.description}</p>
         
@@ -112,6 +120,12 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
               <Github size={16} />
               <span>Code</span>
             </a>
+          )}
+          {project.private && (
+            <span className="sticky-note-private">
+              <Lock size={16} />
+              <span>Source private</span>
+            </span>
           )}
           {project.live && (
             <a 

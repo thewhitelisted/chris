@@ -34,6 +34,7 @@ jobs:
       - run: npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PORTFOLIO_REPOS_TOKEN: ${{ github.event_name != 'pull_request' && secrets.PORTFOLIO_REPOS_TOKEN || '' }}
           ALLOW_NO_GITHUB_PROJECTS: ${{ github.event_name == 'pull_request' && '1' || '' }}
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
