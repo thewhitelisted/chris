@@ -66,6 +66,8 @@ describe('parseRenames', () => {
     ['an empty value', '{"a": ""}', /must map one lowercase repo name/],
     ['a number value', '{"a": 1}', /"a": 1 must map/],
     ['a self map', '{"a": "a"}', /"a" maps to itself/],
+    ['a dot-dot key', '{"..": "a"}', /cannot use \. or \.\. as a name/],
+    ['a dot value', '{"a": "."}', /cannot use \. or \.\. as a name/],
     ['a chain', '{"a": "b", "b": "c"}', /"a" maps to "b", which is itself renamed; map "a" to "c"/],
   ])('rejects %s', (_label, source, message) => {
     expect(() => parseRenames(FILE, source)).toThrow(ContentError)

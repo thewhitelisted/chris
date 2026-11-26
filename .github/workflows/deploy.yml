@@ -40,20 +40,22 @@ jobs:
           cache-dependency-path: code/package-lock.json
       - run: npm ci --ignore-scripts
       - name: Rename devlogs folders of repos renamed on GitHub
-        run: npm run sync-renames
+        run: |
+          if [ -z "$PORTFOLIO_REPOS_TOKEN" ]; then echo '::error::PORTFOLIO_REPOS_TOKEN is not set; the rename sync needs it'; exit 1; fi
+          npm run sync-renames
         env:
           PORTFOLIO_REPOS_TOKEN: ${{ secrets.PORTFOLIO_REPOS_TOKEN }}
       - name: Commit devlogs folder renames
         id: commit
         env:
           PUSH_TOKEN: ${{ github.token }}
+        # Hooks are off so nothing the sync step wrote into .git/hooks runs with the token.
         run: |
+          if [ -z "$(git status --porcelain -- ../devlogs)" ]; then exit 0; fi
           git add -A ../devlogs
-          if ! git diff --cached --quiet; then
-            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-              commit -m 'Rename devlogs folders of repos renamed on GitHub'
-            git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:master
-          fi
+          git -c core.hooksPath=/dev/null -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m 'Rename devlogs folders of repos renamed on GitHub'
+          git -c core.hooksPath=/dev/null push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:master
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   build:

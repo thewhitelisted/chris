@@ -24,6 +24,7 @@ export function parseRenames(file, source) {
     if (!SLUG.test(from) || typeof to !== 'string' || !SLUG.test(to)) {
       throw new ContentError(file, `"${from}": ${JSON.stringify(to)} must map one lowercase repo name to another`)
     }
+    if ([from, to].some((slug) => slug === '.' || slug === '..')) throw new ContentError(file, `"${from}": "${to}" cannot use . or .. as a name`)
     if (from === to) throw new ContentError(file, `"${from}" maps to itself`)
     if (renames.has(to)) throw new ContentError(file, `"${from}" maps to "${to}", which is itself renamed; map "${from}" to "${renames.get(to)}"`)
   }

@@ -1,5 +1,5 @@
 // Renames devlogs/<old> to devlogs/<new> for each repo renamed on GitHub, recording the old name in devlogs/.renames.json.
-// Usage: node build/sync-renames.js [devlogs folder]. Uses PORTFOLIO_REPOS_TOKEN or GITHUB_TOKEN like the build.
+// Usage: node build/sync-renames.js [devlogs folder]. Uses PORTFOLIO_REPOS_TOKEN, else GITHUB_TOKEN (CI passes only the first).
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { fetchOwnerRepos, selectPortfolioProjects, fetchRepoSlug } from './github.js'
