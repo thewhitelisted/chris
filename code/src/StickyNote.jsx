@@ -1,23 +1,21 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ExternalLink, Github, X, FileText, Lock } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { X } from 'lucide-react'
 import { formatDate } from './dates.js'
-import { statusLabel } from './projectStatus.js'
+import { projectDateLine, statusLabel } from './projectStatus.js'
+import { plural, timelinePath } from './devlogs.js'
+import ProjectLinks from './ProjectLinks.jsx'
+import ProjectStats from './ProjectStats.jsx'
 
-function dateLine(project) {
-  if (project.status !== 'in-progress') return formatDate(project.date)
-  const started = `Started ${formatDate(project.date)}`
-  return project.updated ? `${started} · Last updated ${formatDate(project.updated)}` : started
-}
-
-function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront }) {
+function StickyNote({ project, entries, onClose, initialPosition, zIndex, onBringToFront }) {
   const [position, setPosition] = useState(initialPosition)
   const [isDragging, setIsDragging] = useState(false)
   const dragRef = useRef(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
   const handleMouseDown = (e) => {
-    if (e.target.closest('.sticky-note-close') || e.target.closest('.sticky-note-link')) {
+    if (e.target.closest('.sticky-note-close') || e.target.closest('.sticky-note-link') || e.target.closest('.sticky-note-devlog')) {
       return
     }
     
@@ -97,7 +95,7 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
       
       <div className="sticky-note-content">
         <h3 className="sticky-note-title">{project.title}</h3>
-        <div className="sticky-note-date">{dateLine(project)}</div>
+        <div className="sticky-note-date">{projectDateLine(project)}</div>
         {project.status !== 'complete' && <div className="sticky-note-status">{statusLabel(project.status)}</div>}
         
         <p className="sticky-note-description">{project.description}</p>
@@ -108,50 +106,17 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
           ))}
         </div>
         
-        <div className="sticky-note-links">
-          {project.github && (
-            <a 
-              href={project.github} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="sticky-note-link"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Github size={16} />
-              <span>Code</span>
-            </a>
-          )}
-          {project.private && (
-            <span className="sticky-note-private">
-              <Lock size={16} />
-              <span>Source private</span>
-            </span>
-          )}
-          {project.live && (
-            <a 
-              href={project.live} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="sticky-note-link"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ExternalLink size={16} />
-              <span>Live</span>
-            </a>
-          )}
-          {project.report && (
-            <a 
-              href={project.report} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="sticky-note-link"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <FileText size={16} />
-              <span>Report</span>
-            </a>
-          )}
-        </div>
+        <ProjectStats stats={project.stats} />
+
+        {entries.length > 0 && (
+          <Link to={timelinePath(project.slug)} className="sticky-note-devlog">
+            <span className="sticky-note-devlog-label">Latest update · {formatDate(entries[0].date)}</span>
+            <span className="sticky-note-devlog-title">{entries[0].title}</span>
+            <span className="sticky-note-devlog-count">{plural(entries.length, 'update')}</span>
+          </Link>
+        )}
+
+        <ProjectLinks project={project} />
       </div>
     </motion.div>
   )
