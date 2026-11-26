@@ -15,6 +15,15 @@ const components = {
   blockquote: ({children}) => <blockquote className="post-quote">{children}</blockquote>,
   hr: () => <hr className="post-divider" />,
   strong: ({children}) => <strong className="post-bold">{children}</strong>,
+  img: ({src, alt, title}) => <img className="post-image" src={src} alt={alt} title={title} />,
+  // A wide table scrolls inside its own box instead of widening the page.
+  table: ({children}) => (
+    <div className="post-table-wrap" role="region" aria-label="Table" tabIndex={0}>
+      <table className="post-table">{children}</table>
+    </div>
+  ),
+  th: ({children, style}) => <th className="post-table-cell" style={style}>{children}</th>,
+  td: ({children, style}) => <td className="post-table-cell" style={style}>{children}</td>,
 }
 
 function Markdown({ text }) {

@@ -48,3 +48,22 @@ describe('Markdown safety', () => {
     expect([...view.container.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual(['https://example.com/x', '/projects/notes', 'mailto:me@example.com'])
   })
 })
+
+describe('Markdown tables and images', () => {
+  it('puts a table in its own focusable scroll box, with header and body cells and GFM alignment', async () => {
+    await render('| a | b |\n|:--|--:|\n| https://example.com/a/very/long/path | 2 |')
+    const wrap = view.container.querySelector('div.post-table-wrap')
+    expect(wrap.getAttribute('role')).toBe('region')
+    expect(wrap.getAttribute('aria-label')).toBe('Table')
+    expect(wrap.getAttribute('tabindex')).toBe('0')
+    expect(wrap.querySelector('table.post-table')).not.toBeNull()
+    expect([...wrap.querySelectorAll('th.post-table-cell')].map((c) => [c.textContent, c.style.textAlign])).toEqual([['a', 'left'], ['b', 'right']])
+    expect([...wrap.querySelectorAll('td.post-table-cell')].map((c) => [c.textContent, c.style.textAlign])).toEqual([['https://example.com/a/very/long/path', 'left'], ['2', 'right']])
+  })
+
+  it('renders an image with the post-image class, keeping src, alt and title', async () => {
+    await render('![a chart](/img/chart.png "Weekly commits")')
+    const img = view.container.querySelector('img')
+    expect([img.className, img.getAttribute('src'), img.getAttribute('alt'), img.getAttribute('title')]).toEqual(['post-image', '/img/chart.png', 'a chart', 'Weekly commits'])
+  })
+})

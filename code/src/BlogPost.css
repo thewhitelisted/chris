@@ -122,6 +122,49 @@
   margin: 36px 0;
 }
 
+.post-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px 0;
+  border-radius: 6px;
+}
+
+.post-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 20px 0;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+}
+
+.post-table {
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #525252;
+}
+
+.post-table-cell {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: left;
+  vertical-align: top;
+  min-width: 8ch;
+  overflow-wrap: anywhere;
+}
+
+th.post-table-cell {
+  font-weight: 600;
+  color: #111111;
+  background: #fafafa;
+  border-bottom-color: #e5e5e5;
+}
+
+.post-table tr:last-child .post-table-cell {
+  border-bottom: none;
+}
+
 .post-bold {
   font-weight: 600;
   color: #111111;
