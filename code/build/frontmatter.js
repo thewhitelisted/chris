@@ -15,7 +15,7 @@ export class ContentError extends Error {
 }
 
 export function parseFrontmatter(file, source) {
-  const text = source.replace(/^﻿/, '').replace(/\r\n?/g, '\n')
+  const text = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n')
   const match = FRONTMATTER.exec(text)
   if (!match) throw new ContentError(file, 'must start with a "---" frontmatter block closed by "---"')
 
