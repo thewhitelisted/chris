@@ -63,7 +63,7 @@ describe('Layout route loading', () => {
   it('shows the Suspense fallback on first load, then the route', async () => {
     await renderApp()
     expect(isLoading()).toBe(true)
-    expect(navLinks()).toBe(7)
+    expect(navLinks()).toBe(8)
 
     await settle(() => chunks.home.resolve(page('home page')))
     expect(paneText()).toBe('home page')
@@ -107,7 +107,7 @@ describe('Layout route loading', () => {
 
     expect(alertText()).toBe('This page failed to load. Reload to try again.')
     expect(paneText()).not.toContain('home page')
-    expect(navLinks()).toBe(7)
+    expect(navLinks()).toBe(8)
     expect(activeNav()).toBe('projects')
     expect(view.caught).toHaveLength(1)
   })

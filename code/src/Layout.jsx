@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Home, User, FolderOpen, BookOpen, FileText, Music, Lightbulb, Menu, X } from 'lucide-react'
+import { Home, User, FolderOpen, Activity, BookOpen, FileText, Music, Lightbulb, Menu, X } from 'lucide-react'
 import Loading from './Loading.jsx'
 import RouteErrorBoundary from './RouteErrorBoundary.jsx'
 import { blogPosts } from 'virtual:posts'
@@ -17,6 +17,7 @@ function Layout() {
     { path: '/', label: 'home', icon: Home },
     { path: '/about', label: 'about', icon: User },
     { path: '/projects', label: 'projects', icon: FolderOpen },
+    { path: '/now', label: 'now', icon: Activity },
     { path: '/blog', label: 'blog', icon: BookOpen },
     { path: '/2025-christopher_lee.pdf', label: 'resume', icon: FileText, external: true },
   ]
