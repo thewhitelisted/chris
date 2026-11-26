@@ -210,6 +210,15 @@ describe('private repos', () => {
     }
   })
 
+  it('skips an untagged private repo without checking it, so its name never reaches an error or log', () => {
+    const broken = privateRepo({ name: 'hidden-thing', topics: [], pushed_at: null, description: null })
+    expect(selectPortfolioProjects([broken, privateRepo()], TOPIC).map((p) => p.title)).toEqual(['stealth-alpha'])
+  })
+
+  it('still checks a tagged private repo', () => {
+    expect(() => selectPortfolioProjects([privateRepo({ pushed_at: null })], TOPIC)).toThrow('repo stealth-alpha: field "pushed_at"')
+  })
+
   it('needs a description like any tagged repo', () => {
     expect(() => selectPortfolioProjects([privateRepo({ description: null })], TOPIC)).toThrow('repo stealth-alpha is tagged "portfolio" but has no description')
   })
@@ -356,8 +365,10 @@ describe('fetchOwnerRepos', () => {
     const foreign = [{ ...recorded[0], html_url: 'https://github.com/someone-else/baskets' }]
     const { fetchImpl } = recordingFetch([jsonResponse(foreign)])
     await expect(fetchOwnerRepos({ user: 'thewhitelisted', token: 'pat', includePrivate: true, fetchImpl })).rejects.toThrow(
-      'PORTFOLIO_REPOS_TOKEN listed "https://github.com/someone-else/baskets", which is not owned by thewhitelisted',
+      'PORTFOLIO_REPOS_TOKEN listed a repo not owned by thewhitelisted; create the token on the thewhitelisted account',
     )
+    const error = await fetchOwnerRepos({ user: 'thewhitelisted', token: 'pat', includePrivate: true, fetchImpl: recordingFetch([jsonResponse(foreign)]).fetchImpl }).catch((err) => err)
+    expect(error.message).not.toContain('someone-else')
   })
 
   it('accepts an owner name that differs only in case', async () => {

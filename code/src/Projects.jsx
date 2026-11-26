@@ -19,7 +19,7 @@ const searchableText = (project) => [
   project.title,
   project.description,
   ...project.technologies,
-  statusLabel(project.status),
+  ...(project.status === 'complete' ? [] : [statusLabel(project.status)]),
   ...(project.private ? ['Private'] : []),
 ]
 
@@ -101,7 +101,9 @@ function Projects() {
                     </span>
                   </div>
                   <div className="col status">
-                    <span className={`status-badge status-${project.status}`}>{statusLabel(project.status)}</span>
+                    {project.status !== 'complete' && (
+                      <span className={`status-badge status-${project.status}`}>{statusLabel(project.status)}</span>
+                    )}
                   </div>
                 </button>
               ))}

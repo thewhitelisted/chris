@@ -98,7 +98,7 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
       <div className="sticky-note-content">
         <h3 className="sticky-note-title">{project.title}</h3>
         <div className="sticky-note-date">{dateLine(project)}</div>
-        <div className="sticky-note-status">{statusLabel(project.status)}</div>
+        {project.status !== 'complete' && <div className="sticky-note-status">{statusLabel(project.status)}</div>}
         
         <p className="sticky-note-description">{project.description}</p>
         

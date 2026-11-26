@@ -91,9 +91,14 @@ export function repoToProject(repo, topic) {
   }
 }
 
+function isUntaggedPrivate(repo, topic) {
+  return repo?.private === true && !(Array.isArray(repo.topics) && repo.topics.includes(topic))
+}
+
 export function selectPortfolioProjects(repos, topic) {
   if (!Array.isArray(repos)) throw new GitHubDataError(`expected an array of repos, got ${JSON.stringify(repos)?.slice(0, 200)}`)
   return repos
+    .filter((repo) => !isUntaggedPrivate(repo, topic))
     .map(validateRepo)
     .filter((repo) => repo.topics.includes(topic))
     .map((repo) => repoToProject(repo, topic))
@@ -110,10 +115,7 @@ function checkOwnedBy(repos, user) {
   const prefix = `https://github.com/${user}/`.toLowerCase()
   for (const repo of repos) {
     if (typeof repo?.html_url !== 'string' || !repo.html_url.toLowerCase().startsWith(prefix)) {
-      throw new GitHubDataError(
-        `PORTFOLIO_REPOS_TOKEN listed ${JSON.stringify(repo?.html_url)}, which is not owned by ${user}; ` +
-          `create the token on the ${user} account`,
-      )
+      throw new GitHubDataError(`PORTFOLIO_REPOS_TOKEN listed a repo not owned by ${user}; create the token on the ${user} account`)
     }
   }
 }

@@ -36,8 +36,8 @@ describe('Projects page status and privacy', () => {
     expect(rowTitles()).toEqual(['stealth-alpha', 'notes', 'shipped', 'shelved'])
   })
 
-  it('shows a status badge on every row', () => {
-    expect(rows().map((r) => r.querySelector('.status-badge').textContent)).toEqual(['In progress', 'In progress', 'Complete', 'Archived'])
+  it('shows a status badge on in-progress and archived rows, and none on complete ones', () => {
+    expect(rows().map((r) => r.querySelector('.status-badge')?.textContent ?? null)).toEqual(['In progress', 'In progress', null, 'Archived'])
     expect(row('stealth-alpha').querySelector('.status-badge').className).toBe('status-badge status-in-progress')
   })
 
@@ -60,6 +60,8 @@ describe('Projects page status and privacy', () => {
     expect(rowTitles()).toEqual(['stealth-alpha'])
     await search('archived')
     expect(rowTitles()).toEqual(['shelved'])
+    await search('complete')
+    expect(rowTitles()).toEqual([])
   })
 
   it('shows start and last-updated dates, "Source private" and no code link for a private in-progress repo', async () => {
@@ -78,7 +80,7 @@ describe('Projects page status and privacy', () => {
   it('shows the plain creation date and a code link for a complete public repo', async () => {
     const card = await openNote('shipped')
     expect(card.querySelector('.sticky-note-date').textContent).toBe('February 2025')
-    expect(card.querySelector('.sticky-note-status').textContent).toBe('Complete')
+    expect(card.querySelector('.sticky-note-status')).toBeNull()
     expect(card.querySelector('.sticky-note-private')).toBeNull()
     expect([...card.querySelectorAll('.sticky-note-link')].map((a) => a.textContent)).toEqual(['Code'])
   })
