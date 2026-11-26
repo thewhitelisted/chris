@@ -101,6 +101,12 @@ async function scratchProject({ posts = {}, devlogs = null, publicFiles = {}, sc
 }
 
 async function build(env = {}, project = { root, config }, logLevel = 'error') {
+  if (project.config === config && env.PORTFOLIO_REPOS_TOKEN) {
+    throw new Error(
+      'build(): a token build of the real site checks the real devlogs/ folder against the mocked repo list, ' +
+        'so any real devlog for an unmocked repo fails it. Pass a scratchProject() instead.',
+    )
+  }
   const outDir = await mkdtemp(path.join(tmpdir(), 'site-build-'))
   const result = await new Promise((resolve) => {
     execFile(
@@ -233,7 +239,7 @@ describe('vite build with private repos', () => {
 
   it('lists repos through /user/repos with PORTFOLIO_REPOS_TOKEN and bundles a tagged private repo without its code link', async () => {
     const seen = serveJson([...recordedTagged, privateRepo])
-    const site = await build({ PORTFOLIO_REPOS_TOKEN: 'pat-value', GITHUB_TOKEN: 'actions-token' })
+    const site = await build({ PORTFOLIO_REPOS_TOKEN: 'pat-value', GITHUB_TOKEN: 'actions-token' }, await scratchProject({ script: true }))
     expect(site.output).toBe('')
     expect(site.code).toBe(0)
     expect(seen).toEqual([
@@ -264,7 +270,7 @@ describe('vite build with private repos', () => {
 
   it('fails, naming the secret, when PORTFOLIO_REPOS_TOKEN is rejected', async () => {
     serveJson({ message: 'Bad credentials' }, 401)
-    const { code, output } = await build({ PORTFOLIO_REPOS_TOKEN: 'expired' })
+    const { code, output } = await build({ PORTFOLIO_REPOS_TOKEN: 'expired' }, await scratchProject())
     expect(code).not.toBe(0)
     expect(output).toMatch(/HTTP 401 \(PORTFOLIO_REPOS_TOKEN is expired, revoked or wrong; replace the secret\)/)
   }, 60000)
