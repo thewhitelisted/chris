@@ -12,6 +12,7 @@ import {
   commitActivity,
   fetchRepoStats,
   addRepoStats,
+  fetchRepoSlug,
   MAX_CLOCK_SKEW_MS,
 } from './github.js'
 
@@ -790,5 +791,56 @@ describe('addRepoStats', () => {
     await expect(addRepoStats([{ title: 'Live', status: 'in-progress' }], async () => {
       throw new GitHubDataError('boom')
     })).rejects.toThrow('boom')
+  })
+})
+
+describe('fetchRepoSlug', () => {
+  function oneResponse(response) {
+    const calls = []
+    const fetchImpl = async (url, init) => {
+      calls.push({ url, headers: init.headers })
+      return response
+    }
+    return { calls, fetchImpl }
+  }
+  const lookup = (fetchImpl, extra = {}) => fetchRepoSlug({ user: 'thewhitelisted', name: 'old-name', token: 'tkn', fetchImpl, ...extra })
+
+  it('asks for the repo by name with the token and returns its lowercased name', async () => {
+    const { calls, fetchImpl } = oneResponse(jsonResponse({ name: 'NewName', owner: { login: 'thewhitelisted' } }))
+    expect(await lookup(fetchImpl)).toBe('newname')
+    expect(calls).toEqual([{ url: 'https://api.github.com/repos/thewhitelisted/old-name', headers: expect.objectContaining({ Authorization: 'Bearer tkn' }) }])
+  })
+
+  it('returns the same name for a repo that was not renamed', async () => {
+    const { fetchImpl } = oneResponse(jsonResponse({ name: 'old-name', owner: { login: 'thewhitelisted' } }))
+    expect(await lookup(fetchImpl)).toBe('old-name')
+  })
+
+  it('returns null when there is no such repo (HTTP 404)', async () => {
+    const { fetchImpl } = oneResponse(jsonResponse({ message: 'Not Found' }, 404))
+    expect(await lookup(fetchImpl)).toBeNull()
+  })
+
+  it('returns null when the repo moved to another owner, comparing owners without case', async () => {
+    expect(await lookup(oneResponse(jsonResponse({ name: 'x', owner: { login: 'someone-else' } })).fetchImpl)).toBeNull()
+    expect(await lookup(oneResponse(jsonResponse({ name: 'X', owner: { login: 'TheWhitelisted' } })).fetchImpl)).toBe('x')
+  })
+
+  it.each([
+    ['a non-object', []],
+    ['null', null],
+    ['no name', { owner: { login: 'thewhitelisted' } }],
+    ['an empty name', { name: '', owner: { login: 'thewhitelisted' } }],
+    ['no owner', { name: 'x' }],
+  ])('fails on %s', async (_label, body) => {
+    await expect(lookup(oneResponse(jsonResponse(body)).fetchImpl)).rejects.toThrow(/old-name returned .* instead of a repo/)
+  })
+
+  it.each([401, 403, 500])('fails on HTTP %i', async (status) => {
+    await expect(lookup(oneResponse(jsonResponse({ message: 'nope' }, status)).fetchImpl)).rejects.toThrow(`old-name returned HTTP ${status}`)
+  })
+
+  it('names the private token on HTTP 401 when it is the private token', async () => {
+    await expect(lookup(oneResponse(jsonResponse({}, 401)).fetchImpl, { privateToken: true })).rejects.toThrow(/PORTFOLIO_REPOS_TOKEN is expired/)
   })
 })

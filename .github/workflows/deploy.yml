@@ -18,6 +18,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: code
@@ -31,6 +33,20 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - name: Rename devlogs folders of repos renamed on GitHub
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        run: npm run sync-renames
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PORTFOLIO_REPOS_TOKEN: ${{ secrets.PORTFOLIO_REPOS_TOKEN }}
+      - name: Commit devlogs folder renames
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        run: |
+          git add -A ../devlogs
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m 'Rename devlogs folders of repos renamed on GitHub'
+          git push origin HEAD:master
       - run: npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync-renames": "node build/sync-renames.js"
   },
   "dependencies": {
     "framer-motion": "^12.43.0",

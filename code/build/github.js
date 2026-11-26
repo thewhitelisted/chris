@@ -273,6 +273,25 @@ export async function fetchRepoStats({
   }
 }
 
+// The lowercased name of the repo GitHub serves at user/name, following a rename; null if there is none or it moved to another owner.
+export async function fetchRepoSlug({
+  user,
+  name,
+  token,
+  privateToken = false,
+  apiUrl = 'https://api.github.com',
+  fetchImpl = fetch,
+  timeoutMs = 20000,
+}) {
+  const url = `${apiUrl}/repos/${encodeURIComponent(user)}/${encodeURIComponent(name)}`
+  const { status, data } = await getJson(url, { token, fetchImpl, timeoutMs, privateToken, acceptStatuses: [200, 404] })
+  if (status === 404) return null
+  if (data === null || typeof data !== 'object' || !isString(data.name) || data.name === '' || !isString(data.owner?.login)) {
+    throw new GitHubDataError(`${url} returned ${JSON.stringify(data)?.slice(0, 200)} instead of a repo`)
+  }
+  return data.owner.login.toLowerCase() === user.toLowerCase() ? data.name.toLowerCase() : null
+}
+
 export function addRepoStats(projects, statsFor) {
   return Promise.all(projects.map(async (project) => ({
     ...project,
