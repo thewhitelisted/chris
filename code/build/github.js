@@ -177,6 +177,8 @@ const DAY_SECONDS = 86400
 const EPOCH_WEEKDAY = 4
 const WEEKS = 52
 const RECENT_DAYS = 30
+// How far the build machine's clock may lag GitHub's before a week GitHub has started counts as "in the future".
+export const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000
 const isCount = (v) => Number.isSafeInteger(v) && v >= 0
 
 export function languagePercents(languages, repo) {
@@ -217,7 +219,9 @@ export function commitActivity(weeks, repo, nowMs) {
   })
 
   const newest = weeks.at(-1)
-  if (newest.week * 1000 > nowMs) fail(`has a week starting after the build time ${new Date(nowMs).toISOString()}`)
+  if (newest.week * 1000 > nowMs + MAX_CLOCK_SKEW_MS) {
+    fail(`has a week starting more than ${MAX_CLOCK_SKEW_MS / 60000} minutes after the build time ${new Date(nowMs).toISOString()}`)
+  }
   const today = Math.floor(nowMs / 1000 / DAY_SECONDS)
   const lastWeekStart = Math.max(today - ((today + EPOCH_WEEKDAY) % 7), firstDay(newest))
 

@@ -50,7 +50,7 @@ describe('parseDevlogEntry', () => {
       .toThrow('devlogs/p/2026-11-26.md: frontmatter date 2026-11-25 does not match the file name date 2026-11-26')
   })
 
-  it.each(['notes.md', '2026-1-26.md', '2026-11-26.markdown', '2026-11-26.MD', '2026-11-26T10:00.md', '2026-11-26-extra.md', 'x2026-11-26.md'])(
+  it.each(['notes.md', '2026-1-26.md', '2026-11-26.markdown', '2026-11-26.MD', '2026-11-26T10:00.md', '2026-11-26-extra.md', 'x2026-11-26.md', '2026-11-26.md.bak', '2026-11-26.mdx'])(
     'rejects the file name %s',
     (name) => {
       expect(() => parseDevlogEntry(`devlogs/p/${name}`, entry('2026-11-26'))).toThrow(/must be named YYYY-MM-DD\.md/)
@@ -147,6 +147,11 @@ describe('loadDevlogs', () => {
   it('fails on a nested folder inside a project folder', async () => {
     const dir = await devlogsDir({ pathos: { drafts: { '2026-11-20.md': entry('2026-11-20') } } })
     await expect(strict(dir)).rejects.toThrow(/drafts: only YYYY-MM-DD\.md files belong in a project devlog folder/)
+  })
+
+  it.each(['2026-11-26.md.bak', '2026-11-26.mdx'])('fails on the stray file %s beside a valid entry', async (name) => {
+    const dir = await devlogsDir({ pathos: { '2026-11-26.md': entry('2026-11-26'), [name]: entry('2026-11-26') } })
+    await expect(strict(dir)).rejects.toThrow(`${name}: devlog entries must be named YYYY-MM-DD.md`)
   })
 
   it('fails on a stray file inside a project folder', async () => {

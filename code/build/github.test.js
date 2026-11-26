@@ -12,6 +12,7 @@ import {
   commitActivity,
   fetchRepoStats,
   addRepoStats,
+  MAX_CLOCK_SKEW_MS,
 } from './github.js'
 
 const fixture = (name) => JSON.parse(readFileSync(path.join(import.meta.dirname, 'fixtures', name), 'utf8'))
@@ -577,11 +578,19 @@ describe('commitActivity', () => {
     it('accepts a newest week that starts exactly at the build time', () => {
       const weeks = weeksEnding('2026-11-22', (day) => (day === '2026-11-22' ? 2 : 0))
       expect(commitActivity(weeks, 'r', at('2026-11-22T00:00:00.000Z'))).toEqual({ weekly: [...Array(51).fill(0), 2], last30Days: 2 })
-      expect(() => commitActivity(weeks, 'r', at('2026-11-21T23:59:59.999Z'))).toThrow(/has a week starting after the build time/)
     })
 
-    it('still fails when built before that week starts', () => {
-      expect(() => commitActivity(early(), 'r', at('2026-11-28T22:59:59.999Z'))).toThrow(/has a week starting after the build time/)
+    it('allows the build clock to lag GitHub by up to 5 minutes, and no more', () => {
+      expect(MAX_CLOCK_SKEW_MS).toBe(5 * 60 * 1000)
+      const weeks = weeksEnding('2026-11-29', (day) => (day === '2026-11-28' ? 1 : day === '2026-11-29' ? 4 : 0))
+      const start = at('2026-11-29T00:00:00.000Z')
+      expect(commitActivity(weeks, 'x', start - 500)).toEqual({ weekly: [...Array(50).fill(0), 1, 4], last30Days: 1 })
+      expect(commitActivity(weeks, 'x', start - MAX_CLOCK_SKEW_MS).weekly.slice(-2)).toEqual([1, 4])
+      expect(() => commitActivity(weeks, 'x', start - MAX_CLOCK_SKEW_MS - 1)).toThrow(/has a week starting more than 5 minutes after the build time 2026-11-28T23:54:59.999Z/)
+    })
+
+    it('still fails when built more than the allowed skew before that week starts', () => {
+      expect(() => commitActivity(early(), 'r', at('2026-11-28T22:54:59.999Z'))).toThrow(/has a week starting more than 5 minutes after the build time/)
     })
   })
 
@@ -613,7 +622,7 @@ describe('commitActivity', () => {
     ['a negative count', () => good().map((w, i) => (i === 5 ? { ...w, days: [-1, 1, 1, 1, 1, 1, 1], total: 5 } : w)), /should have a total and 7 daily counts/],
     ['days not adding up', () => good().map((w, i) => (i === 5 ? { ...w, total: 8 } : w)), /week 5 .* daily counts that do not add up/],
     ['a gap', () => good().map((w, i) => (i === 10 ? { ...w, week: w.week + 7 * 86400 } : w)), /week 10 .* does not follow the previous week|week 11/],
-    ['a week after the build date', () => weeksEnding('2026-11-29'), /has a week starting after the build time 2026-11-26T12:00:00.000Z/],
+    ['a week after the build date', () => weeksEnding('2026-11-29'), /has a week starting more than 5 minutes after the build time 2026-11-26T12:00:00.000Z/],
   ])('fails on %s, naming the repo', (_name, make, message) => {
     const error = (() => {
       try {
