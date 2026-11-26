@@ -16,13 +16,59 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The only job that can push. It installs without scripts and runs nothing but the rename sync, so no other
+  # dependency, test or build step ever holds a write token.
+  sync-renames:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    defaults:
+      run:
+        working-directory: code
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: master
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: code/package-lock.json
+      - run: npm ci --ignore-scripts
+      - name: Rename devlogs folders of repos renamed on GitHub
+        run: |
+          if [ -z "$PORTFOLIO_REPOS_TOKEN" ]; then echo '::error::PORTFOLIO_REPOS_TOKEN is not set; the rename sync needs it'; exit 1; fi
+          npm run sync-renames
+        env:
+          PORTFOLIO_REPOS_TOKEN: ${{ secrets.PORTFOLIO_REPOS_TOKEN }}
+      - name: Commit devlogs folder renames
+        id: commit
+        env:
+          PUSH_TOKEN: ${{ github.token }}
+        # Hooks are off so nothing the sync step wrote into .git/hooks runs with the token.
+        run: |
+          if [ -z "$(git status --porcelain -- ../devlogs)" ]; then exit 0; fi
+          git add -A ../devlogs
+          git -c core.hooksPath=/dev/null -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m 'Rename devlogs folders of repos renamed on GitHub'
+          git -c core.hooksPath=/dev/null push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:master
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: sync-renames
+    if: ${{ !cancelled() && (needs.sync-renames.result == 'success' || needs.sync-renames.result == 'skipped') }}
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: code
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.sync-renames.outputs.sha || github.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24

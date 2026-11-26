@@ -52,7 +52,7 @@ export async function loadDevlogs(dir, projectSlugs, { skipUnknownProjects }) {
     if (!folder.isDirectory()) throw new ContentError(folderPath, 'only project folders belong in the devlogs folder')
     const known = projectSlugs.includes(folder.name)
     if (!known && !skipUnknownProjects) {
-      throw new ContentError(folderPath, `"${folder.name}" is not a project slug; use one of: ${projectSlugs.join(', ')}`)
+      throw new ContentError(folderPath, `"${folder.name}" is not a project slug; use one of: ${projectSlugs.join(', ')}. If the repo was renamed on GitHub, run npm run sync-renames`)
     }
     if (known && RESERVED_PROJECT_SLUGS.includes(folder.name)) {
       throw new ContentError(folderPath, `a project with the slug "${folder.name}" cannot have devlogs: its page /projects/${folder.name} would replace the projects page`)

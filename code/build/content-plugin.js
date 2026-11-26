@@ -5,6 +5,7 @@ import { loadDevlogs, devlogIndex, skippedDevlogsWarning, ignoredDotFoldersWarni
 import { fetchOwnerRepos, selectPortfolioProjects, addRepoStats, fetchRepoStats } from './github.js'
 import { validateHandKept, mergeProjects, allowNoGitHubProjects } from './projects.js'
 import { renderRss, headTags, withHead, pageFiles } from './feeds.js'
+import { RENAMES_FILE, readRenames, checkRenames, redirectRoutes, redirectHtml } from './renames.js'
 import { SITE_URL, GITHUB_USER, PORTFOLIO_TOPIC } from './site.js'
 import { SITE_NAME, SITE_DESCRIPTION, sitePages } from '../src/site.js'
 import { handKeptProjects } from '../src/projectsData.js'
@@ -36,7 +37,15 @@ export async function loadContent({ root, postsDir, devlogsDir, env, warn }) {
   )
   const skipUnknownDevlogs = !privateToken
   const devlogs = await loadProjectDevlogs({ devlogsDir, projects, skipUnknownDevlogs, warn })
-  return { posts, projects, devlogs, skipUnknownDevlogs }
+  const renames = await loadRenames(devlogsDir, projects)
+  return { posts, projects, devlogs, renames, skipUnknownDevlogs }
+}
+
+export async function loadRenames(devlogsDir, projects) {
+  const file = path.join(devlogsDir, RENAMES_FILE)
+  const renames = await readRenames(file)
+  checkRenames(file, renames, projects.map((project) => project.slug))
+  return renames
 }
 
 export async function loadProjectDevlogs({ devlogsDir, projects, skipUnknownDevlogs, warn }) {
@@ -154,6 +163,7 @@ export default function contentPlugin({ postsDir, devlogsDir }) {
             skipUnknownDevlogs: content.skipUnknownDevlogs,
             warn: (message) => server.config.logger.warn(`[site-content] ${message}`, { timestamp: true }),
           })
+          content.renames = await loadRenames(devlogsDir, content.projects)
           devlogsError = null
         } catch (err) {
           devlogsError = reported(err)
@@ -208,6 +218,9 @@ export default function contentPlugin({ postsDir, devlogsDir }) {
             if (fileName === 'index.html') template.source = pageHtml
             else emit(fileName, pageHtml)
           }
+        }
+        for (const { from, to } of redirectRoutes(content.renames, content.devlogs)) {
+          for (const fileName of pageFiles(from)) emit(fileName, redirectHtml(SITE_URL, to))
         }
       },
     },

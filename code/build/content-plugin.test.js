@@ -352,6 +352,49 @@ describe('vite build with devlogs and stats', () => {
   })
 })
 
+describe('vite build with renamed repos', () => {
+  it('writes redirect pages from each recorded old slug to the current pages', async () => {
+    serveGitHub({ repos: recordedTagged })
+    const project = await scratchProject({
+      script: true,
+      devlogs: { pathos: { '2026-11-20.md': entry('2026-11-20', 'a'), '2026-10-05.md': entry('2026-10-05', 'b') } },
+    })
+    await writeFile(path.join(project.devlogsDir, '.renames.json'), '{"old-pathos": "pathos", "gone": "crowdbook"}')
+    const site = await build({}, project)
+    expect(site.output).toBe('')
+    expect(site.code).toBe(0)
+    for (const [from, to] of [
+      ['projects/old-pathos', '/projects/pathos'],
+      ['projects/old-pathos/2026-11-20', '/projects/pathos/2026-11-20'],
+      ['projects/old-pathos/2026-10-05', '/projects/pathos/2026-10-05'],
+    ]) {
+      for (const file of [`${from}.html`, `${from}/index.html`]) {
+        expect(await site.read(file)).toContain(`<meta http-equiv="refresh" content="0; url=https://www.christopherjlee.ca${to}" />`)
+      }
+    }
+    await expect(site.read('projects/gone.html')).rejects.toThrow(/ENOENT/)
+    expect(await site.read('projects/pathos/2026-11-20.html')).toContain('Pathos devlog: a')
+  }, 60000)
+
+  it('fails when a recorded old slug is a project slug again', async () => {
+    serveGitHub({ repos: recordedTagged })
+    const project = await scratchProject({ devlogs: { pathos: { '2026-11-20.md': entry('2026-11-20', 'a') } } })
+    await writeFile(path.join(project.devlogsDir, '.renames.json'), '{"crowdbook": "pathos"}')
+    const { code, output } = await build({}, project)
+    expect(code).not.toBe(0)
+    expect(output).toMatch(/\.renames\.json: "crowdbook" is a project slug again, so its old links cannot redirect/)
+  }, 60000)
+
+  it('fails on a malformed renames file', async () => {
+    serveGitHub({ repos: recordedTagged })
+    const project = await scratchProject({ devlogs: { pathos: {} } })
+    await writeFile(path.join(project.devlogsDir, '.renames.json'), '{"a": "a"}')
+    const { code, output } = await build({}, project)
+    expect(code).not.toBe(0)
+    expect(output).toMatch(/"a" maps to itself/)
+  }, 60000)
+})
+
 describe('vite build with stats that GitHub has not computed', () => {
   it('builds with activity null and a warning after retrying HTTP 202', async () => {
     let attempts = 0
