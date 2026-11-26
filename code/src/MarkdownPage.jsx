@@ -1,52 +1,12 @@
-import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import Loading from './Loading.jsx'
-import { describeError } from './describeError.js'
-
-const components = {
-  h1: ({children}) => <h1 className="post-title">{children}</h1>,
-  h2: ({children}) => <h2 className="post-heading">{children}</h2>,
-  h3: ({children}) => <h3 className="post-subheading">{children}</h3>,
-  p: ({children}) => <p className="post-paragraph">{children}</p>,
-  em: ({children}) => <em className="post-date">{children}</em>,
-  ul: ({children}) => <ul className="post-list">{children}</ul>,
-  ol: ({children}) => <ol className="post-ordered-list">{children}</ol>,
-  li: ({children}) => <li className="post-list-item">{children}</li>,
-  code: ({children}) => <code className="post-inline-code">{children}</code>,
-  pre: ({children}) => <pre className="post-code-block">{children}</pre>,
-  blockquote: ({children}) => <blockquote className="post-quote">{children}</blockquote>,
-  hr: () => <hr className="post-divider" />,
-  strong: ({children}) => <strong className="post-bold">{children}</strong>,
-}
-
-async function fetchMarkdown(url, signal) {
-  const res = await fetch(url, { signal })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  if ((res.headers.get('content-type') ?? '').includes('text/html')) {
-    throw new Error('not found')
-  }
-  return res.text()
-}
+import Markdown from './Markdown.jsx'
+import { useMarkdown } from './useMarkdown.js'
 
 function MarkdownPage({ url }) {
-  const [result, setResult] = useState(null)
+  const result = useMarkdown(url)
 
-  useEffect(() => {
-    const controller = new AbortController()
-    fetchMarkdown(url, controller.signal).then(
-      (text) => {
-        if (!controller.signal.aborted) setResult({ url, status: 'success', text })
-      },
-      (err) => {
-        if (!controller.signal.aborted) setResult({ url, status: 'error', message: describeError(err) })
-      },
-    )
-    return () => controller.abort()
-  }, [url])
-
-  if (result?.url !== url) {
+  if (result === null) {
     return <Loading />
   }
 
@@ -65,9 +25,7 @@ function MarkdownPage({ url }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-        {result.text}
-      </ReactMarkdown>
+      <Markdown text={result.text} />
     </motion.div>
   )
 }
