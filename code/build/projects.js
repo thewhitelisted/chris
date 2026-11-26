@@ -62,6 +62,13 @@ export function validateHandKept(projects, publicDir) {
       const problem = checkLink(project[field], publicDir)
       if (problem) throw new ProjectsError(`hand-kept project ${label}: "${field}" ${problem}`)
     }
+    if ('updated' in project) {
+      try {
+        formatDate(project.updated)
+      } catch (err) {
+        throw new ProjectsError(`hand-kept project ${label}: "updated" ${err.message}`)
+      }
+    }
     if ('status' in project && !STATUSES.includes(project.status)) {
       throw new ProjectsError(`hand-kept project ${label}: "status" must be one of ${STATUSES.join(', ')}, got ${JSON.stringify(project.status)}`)
     }

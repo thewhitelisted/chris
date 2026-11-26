@@ -76,6 +76,8 @@ describe('validateHandKept', () => {
     [{ title: 'a\u0000b' }, /hand-kept project s: contains the control character U\+0000/],
     [{ description: 'a\u001Bb' }, /hand-kept project s: contains the control character U\+001B/],
     [{ technologies: ['ok', 'b\uFFFE'] }, /hand-kept project s: contains the control character U\+FFFE/],
+    [{ updated: 'soon' }, /hand-kept project s: "updated" Expected YYYY-MM or YYYY-MM-DD, got "soon"/],
+    [{ updated: '2026-02-30' }, /hand-kept project s: "updated" Invalid day/],
     [{ status: 'done' }, /hand-kept project s: "status" must be one of in-progress, complete, archived, got "done"/],
     [{ status: undefined }, /"status" must be one of/],
     [{ private: true }, /hand-kept project s: "private" is only set for GitHub repos/],
