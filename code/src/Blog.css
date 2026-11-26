@@ -170,6 +170,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .col.date {
@@ -190,6 +191,7 @@
 }
 
 .file-name {
+  overflow-wrap: anywhere;
   color: #111111;
   font-size: 13px;
   font-weight: 440;

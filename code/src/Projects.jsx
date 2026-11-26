@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, FolderOpen, Lock } from 'lucide-react'
 import { projects } from 'virtual:projects'
+import { devlogs } from 'virtual:devlogs'
+import { entriesOf } from './devlogs.js'
 import { formatDate } from './dates.js'
 import { useListing, PROJECTS_INITIAL_SORT } from './listing.js'
 import { statusLabel } from './projectStatus.js'
@@ -117,6 +119,7 @@ function Projects() {
           <StickyNote
             key={note.id}
             project={note.project}
+            entries={entriesOf(devlogs, note.project.slug)}
             initialPosition={note.position}
             zIndex={note.zIndex}
             onClose={() => closeStickyNote(note.id)}

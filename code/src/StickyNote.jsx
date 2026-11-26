@@ -1,23 +1,45 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ExternalLink, Github, X, FileText, Lock } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { X } from 'lucide-react'
 import { formatDate } from './dates.js'
-import { statusLabel } from './projectStatus.js'
+import { projectDateLine, statusLabel } from './projectStatus.js'
+import { plural, timelinePath } from './devlogs.js'
+import ProjectLinks from './ProjectLinks.jsx'
+import ProjectStats from './ProjectStats.jsx'
+import { clampNotePosition } from './notePosition.js'
 
-function dateLine(project) {
-  if (project.status !== 'in-progress') return formatDate(project.date)
-  const started = `Started ${formatDate(project.date)}`
-  return project.updated ? `${started} · Last updated ${formatDate(project.updated)}` : started
-}
+// offsetWidth/offsetHeight ignore the open animation's scale transform.
+const fitInViewport = (element, position) => clampNotePosition(
+  position,
+  { width: element.offsetWidth, height: element.offsetHeight },
+  { width: window.innerWidth, height: window.innerHeight },
+)
 
-function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront }) {
+function StickyNote({ project, entries, onClose, initialPosition, zIndex, onBringToFront }) {
   const [position, setPosition] = useState(initialPosition)
   const [isDragging, setIsDragging] = useState(false)
   const dragRef = useRef(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
+  useLayoutEffect(() => {
+    const element = dragRef.current
+    const refit = () => setPosition((current) => {
+      const fitted = fitInViewport(element, current)
+      return fitted.x === current.x && fitted.y === current.y ? current : fitted
+    })
+    refit()
+    const observer = new ResizeObserver(refit)
+    observer.observe(element)
+    window.addEventListener('resize', refit)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', refit)
+    }
+  }, [])
+
   const handleMouseDown = (e) => {
-    if (e.target.closest('.sticky-note-close') || e.target.closest('.sticky-note-link')) {
+    if (e.target.closest('.sticky-note-close') || e.target.closest('.sticky-note-link') || e.target.closest('.sticky-note-devlog')) {
       return
     }
     
@@ -35,16 +57,7 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
     const handleMouseMove = (e) => {
       if (!isDragging) return
       
-      const newX = e.clientX - dragOffset.x
-      const newY = e.clientY - dragOffset.y
-      
-      const maxX = window.innerWidth - 320
-      const maxY = window.innerHeight - 400
-      
-      setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY))
-      })
+      setPosition(fitInViewport(dragRef.current, { x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y }))
     }
 
     const handleMouseUp = () => {
@@ -97,7 +110,7 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
       
       <div className="sticky-note-content">
         <h3 className="sticky-note-title">{project.title}</h3>
-        <div className="sticky-note-date">{dateLine(project)}</div>
+        <div className="sticky-note-date">{projectDateLine(project)}</div>
         {project.status !== 'complete' && <div className="sticky-note-status">{statusLabel(project.status)}</div>}
         
         <p className="sticky-note-description">{project.description}</p>
@@ -108,50 +121,17 @@ function StickyNote({ project, onClose, initialPosition, zIndex, onBringToFront 
           ))}
         </div>
         
-        <div className="sticky-note-links">
-          {project.github && (
-            <a 
-              href={project.github} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="sticky-note-link"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Github size={16} />
-              <span>Code</span>
-            </a>
-          )}
-          {project.private && (
-            <span className="sticky-note-private">
-              <Lock size={16} />
-              <span>Source private</span>
-            </span>
-          )}
-          {project.live && (
-            <a 
-              href={project.live} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="sticky-note-link"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ExternalLink size={16} />
-              <span>Live</span>
-            </a>
-          )}
-          {project.report && (
-            <a 
-              href={project.report} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="sticky-note-link"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <FileText size={16} />
-              <span>Report</span>
-            </a>
-          )}
-        </div>
+        <ProjectStats stats={project.stats} />
+
+        {entries.length > 0 && (
+          <Link to={timelinePath(project.slug)} className="sticky-note-devlog">
+            <span className="sticky-note-devlog-label">Latest update · {formatDate(entries[0].date)}</span>
+            <span className="sticky-note-devlog-title">{entries[0].title}</span>
+            <span className="sticky-note-devlog-count">{plural(entries.length, 'update')}</span>
+          </Link>
+        )}
+
+        <ProjectLinks project={project} />
       </div>
     </motion.div>
   )

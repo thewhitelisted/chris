@@ -1,0 +1,254 @@
+/* Stats, white on a sticky note or project card. */
+.project-stats {
+  --stats-ink: #ffffff;
+  --stats-text: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stats-language-bar {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(127, 127, 127, 0.2);
+}
+
+.stats-language-segment {
+  flex-basis: 0;
+  flex-shrink: 1;
+  background: var(--stats-ink);
+}
+
+.stats-language-legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 6px;
+}
+
+.stats-language {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: var(--stats-text);
+}
+
+.stats-swatch {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--stats-ink);
+}
+
+.stats-language-percent {
+  opacity: 0.75;
+}
+
+.stats-activity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stats-sparkline {
+  width: 100%;
+  height: 24px;
+  display: block;
+}
+
+.stats-sparkline-week {
+  fill: var(--stats-ink);
+}
+
+.stats-sparkline-base {
+  stroke: var(--stats-ink);
+  stroke-width: 0.5;
+  opacity: 0.35;
+}
+
+.stats-activity-text {
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: var(--stats-text);
+}
+
+/* Latest-update link on a sticky note or project card. */
+.sticky-note-devlog {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transition: background 0.15s;
+}
+
+.sticky-note-devlog:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.sticky-note-devlog-label,
+.sticky-note-devlog-count {
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  opacity: 0.75;
+}
+
+.sticky-note-devlog-title {
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* A project in sticky-note colours, fixed in the page (timeline header, /now). */
+.project-card {
+  overflow-wrap: anywhere;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.project-card-title a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.4);
+  text-underline-offset: 3px;
+}
+
+.project-card .sticky-note-status {
+  align-self: flex-start;
+}
+
+.devlog-back {
+  display: inline-block;
+  margin-bottom: 20px;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: #a3a3a3;
+  transition: color 0.15s;
+}
+
+.devlog-back:hover {
+  color: #525252;
+}
+
+.devlog-entries {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.devlog-entry {
+  padding: 24px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.devlog-entry:first-child {
+  padding-top: 4px;
+}
+
+.devlog-entry:last-child {
+  border-bottom: none;
+}
+
+.devlog-entry-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111111;
+  letter-spacing: -0.005em;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.devlog-entry-title a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.devlog-entry-date {
+  display: block;
+  font-size: 11px;
+  color: #a3a3a3;
+  font-family: 'DM Mono', monospace;
+  margin-bottom: 16px;
+}
+
+.devlog-entry-page-title {
+  margin-bottom: 10px;
+  overflow-wrap: anywhere;
+}
+
+.devlog-entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.devlog-entry-meta .devlog-entry-date {
+  margin-bottom: 0;
+}
+
+.devlog-empty,
+.now-no-entry {
+  font-size: 13px;
+  font-style: italic;
+}
+
+.devlog-empty {
+  color: #a3a3a3;
+}
+
+.now-no-entry {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Project tag on a devlog row in the blog list and on an entry page. */
+.devlog-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: #92400e;
+  background: #fef3c7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  flex-shrink: 0;
+}
+
+.now-projects {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.now-inline-link {
+  color: #111111;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 768px) {
+  .project-card {
+    padding: 14px;
+  }
+
+  .devlog-tag {
+    max-width: 140px;
+  }
+}
