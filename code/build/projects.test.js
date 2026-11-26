@@ -44,7 +44,7 @@ describe('checkLink', () => {
 
 describe('validateHandKept', () => {
   it('accepts the real hand-kept list, which is only the financial viscosity indicator', () => {
-    expect(validateHandKept(handKeptProjects, publicDir)).toEqual(handKeptProjects.map((p) => ({ ...p, status: 'complete', private: false })))
+    expect(validateHandKept(handKeptProjects, publicDir)).toEqual(handKeptProjects.map((p) => ({ ...p, status: 'complete', private: false, stats: null })))
     expect(handKeptProjects).toEqual([{
       title: 'financial viscosity indicator',
       date: '2025-04',
@@ -81,6 +81,7 @@ describe('validateHandKept', () => {
     [{ status: 'done' }, /hand-kept project s: "status" must be one of in-progress, complete, archived, got "done"/],
     [{ status: undefined }, /"status" must be one of/],
     [{ private: true }, /hand-kept project s: "private" is only set for GitHub repos/],
+    [{ stats: null }, /hand-kept project s: "stats" come from GitHub and cannot be set by hand/],
   ])('rejects %j', (overrides, message) => {
     expect(() => validateHandKept([project(overrides)], publicDir)).toThrow(message)
   })
@@ -90,7 +91,7 @@ describe('validateHandKept', () => {
   })
 
   it('defaults status to complete and marks the project public', () => {
-    expect(validateHandKept([project()], publicDir)[0]).toMatchObject({ status: 'complete', private: false })
+    expect(validateHandKept([project()], publicDir)[0]).toMatchObject({ status: 'complete', private: false, stats: null })
   })
 
   it('rejects a non-array', () => {
