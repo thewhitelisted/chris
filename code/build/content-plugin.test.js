@@ -18,6 +18,7 @@ const recorded = fixture('users-repos-2026-11-24.json')
 const recordedTagged = fixture('users-repos-2026-11-24-tagged.json')
 const recordedLanguages = fixture('repos-crowdbook-languages-2026-11-26.json')
 const recordedActivity = fixture('repos-crowdbook-commit-activity-2026-11-26.json')
+const statsUrls = (repos) => repos.flatMap((r) => [`/repos/thewhitelisted/${r}/languages`, `/repos/thewhitelisted/${r}/stats/commit_activity`]).sort()
 const pathosInProgress = recordedTagged.map((r) => (r.name === 'Pathos' ? { ...r, topics: [...r.topics, 'in-progress'] } : r))
 
 let server
@@ -242,17 +243,15 @@ describe('vite build with private repos', () => {
     const site = await build({ PORTFOLIO_REPOS_TOKEN: 'pat-value', GITHUB_TOKEN: 'actions-token' }, await scratchProject({ script: true }))
     expect(site.output).toBe('')
     expect(site.code).toBe(0)
-    expect(seen).toEqual([
-      { url: '/user/repos?affiliation=owner&visibility=all&per_page=100&page=1', auth: 'Bearer pat-value' },
-      { url: '/repos/thewhitelisted/stealth-alpha/languages', auth: 'Bearer pat-value' },
-      { url: '/repos/thewhitelisted/stealth-alpha/stats/commit_activity', auth: 'Bearer pat-value' },
-    ])
+    expect(seen[0]).toEqual({ url: '/user/repos?affiliation=owner&visibility=all&per_page=100&page=1', auth: 'Bearer pat-value' })
+    expect(seen.slice(1).map((r) => r.url).sort()).toEqual(statsUrls(['Pathos', 'crowdbook', 'stealth-alpha']))
+    expect(seen.every((r) => r.auth === 'Bearer pat-value')).toBe(true)
     const js = await bundledJs(site)
     const stats = [...js.matchAll(/stats:(null|\{languages:.*?last30Days:\d+\}\})/g)].map((m) => m[1])
-    expect(stats.filter((s) => s !== 'null')).toEqual([
+    expect(stats.filter((s) => s !== 'null')).toEqual(Array(3).fill(
       expect.stringMatching(/^\{languages:\[\{name:"C\+\+",percent:68\.2\},\{name:"Python",percent:30\.4\},\{name:"CMake",percent:1\.3\},\{name:"Dockerfile",percent:\.1\}\],activity:\{weekly:\[(\d+,){51}\d+\],last30Days:\d+\}\}$/),
-    ])
-    expect(stats.filter((s) => s === 'null')).toHaveLength(3)
+    ))
+    expect(stats.filter((s) => s === 'null')).toHaveLength(1)
     expect(js).toContain('title:"stealth-alpha"')
     expect(js).toMatch(/status:"in-progress",private:!0/)
     expect(js).not.toContain('github.com/thewhitelisted/stealth-alpha')
@@ -265,7 +264,9 @@ describe('vite build with private repos', () => {
     const seen = serveJson(recordedTagged)
     const site = await build({ PORTFOLIO_REPOS_TOKEN: '', GITHUB_TOKEN: 'actions-token' })
     expect(site.code).toBe(0)
-    expect(seen).toEqual([{ url: '/users/thewhitelisted/repos?type=owner&per_page=100&page=1', auth: 'Bearer actions-token' }])
+    expect(seen[0]).toEqual({ url: '/users/thewhitelisted/repos?type=owner&per_page=100&page=1', auth: 'Bearer actions-token' })
+    expect(seen.slice(1).map((r) => r.url).sort()).toEqual(statsUrls(['Pathos', 'crowdbook']))
+    expect(seen.every((r) => r.auth === 'Bearer actions-token')).toBe(true)
   }, 60000)
 
   it('fails, naming the secret, when PORTFOLIO_REPOS_TOKEN is rejected', async () => {
@@ -293,14 +294,11 @@ describe('vite build with devlogs and stats', () => {
     site = await build({}, project)
   }, 60000)
 
-  it('succeeds, fetching stats only for the in-progress repo', () => {
+  it('succeeds, fetching stats for every GitHub repo whatever its status', () => {
     expect(site.output).toBe('')
     expect(site.code).toBe(0)
-    expect(seen.map((r) => r.url)).toEqual([
-      '/users/thewhitelisted/repos?type=owner&per_page=100&page=1',
-      '/repos/thewhitelisted/Pathos/languages',
-      '/repos/thewhitelisted/Pathos/stats/commit_activity',
-    ])
+    expect(seen[0].url).toBe('/users/thewhitelisted/repos?type=owner&per_page=100&page=1')
+    expect(seen.slice(1).map((r) => r.url).sort()).toEqual(statsUrls(['Pathos', 'crowdbook']))
   })
 
   it('writes each devlog body without frontmatter at devlogs/<project>/<date>.md', async () => {
@@ -316,7 +314,7 @@ describe('vite build with devlogs and stats', () => {
       '{project:"pathos",date:"2026-10-05",title:"first take",description:"d first take"}]')
     expect(js).not.toContain('Pathos body')
     expect(js).toMatch(/title:"Pathos",.*status:"in-progress",.*stats:\{languages:\[\{name:"C\+\+",percent:68\.2\}/)
-    expect(js).toMatch(/title:"crowdbook",[^}]*status:"complete",[^}]*stats:null/)
+    expect(js).toMatch(/title:"crowdbook",.*status:"complete",.*stats:\{languages:\[\{name:"C\+\+",percent:68\.2\}/)
     expect(js).toMatch(/title:"financial viscosity indicator",[^}]*stats:null/)
   })
 
@@ -361,8 +359,10 @@ describe('vite build with stats that GitHub has not computed', () => {
     const project = await scratchProject({ script: true })
     const site = await build({}, project, 'warn')
     expect(site.code).toBe(0)
-    expect(attempts).toBe(5)
-    expect(site.output).toMatch(/GitHub was still computing commit activity for Pathos after 5 attempts \(HTTP 202\); building without it/)
+    expect(attempts).toBe(10)
+    for (const repo of ['Pathos', 'crowdbook']) {
+      expect(site.output).toMatch(new RegExp(`GitHub was still computing commit activity for ${repo} after 5 attempts \\(HTTP 202\\); building without it`))
+    }
     expect(await bundledJs(site)).toMatch(/title:"Pathos",.*stats:\{languages:\[\{name:"C\+\+",percent:68\.2\}.*?\],activity:null\}/)
   }, 60000)
 })
@@ -447,7 +447,7 @@ describe('vite build failure paths', () => {
     serveGitHub({ repos: pathosInProgress, ...(endpoint === 'languages' ? { languages: failing } : { activity: failing }) })
     const { code, output } = await build({}, await scratchProject())
     expect(code).not.toBe(0)
-    expect(output).toMatch(new RegExp(`GitHub projects: .*/repos/thewhitelisted/Pathos/${endpoint === 'languages' ? 'languages' : 'stats/commit_activity'} returned HTTP ${status}`))
+    expect(output).toMatch(new RegExp(`GitHub projects: .*/repos/thewhitelisted/[^/]+/${endpoint === 'languages' ? 'languages' : 'stats/commit_activity'} returned HTTP ${status}`))
   }, 60000)
 
   it('fails when the GitHub API errors', async () => {

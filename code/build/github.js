@@ -276,6 +276,6 @@ export async function fetchRepoStats({
 export function addRepoStats(projects, statsFor) {
   return Promise.all(projects.map(async (project) => ({
     ...project,
-    stats: project.status === 'in-progress' ? await statsFor(project.title) : null,
+    stats: await statsFor(project.title),
   })))
 }

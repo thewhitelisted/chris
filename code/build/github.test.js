@@ -767,7 +767,7 @@ describe('fetchRepoStats', () => {
 })
 
 describe('addRepoStats', () => {
-  it('fetches stats for in-progress projects only, by repo name, and sets null for the rest', async () => {
+  it('fetches stats for every project whatever its status, by repo name', async () => {
     const asked = []
     const projects = [
       { title: 'Live', status: 'in-progress' },
@@ -778,11 +778,11 @@ describe('addRepoStats', () => {
       asked.push(repo)
       return { languages: [], activity: null }
     })
-    expect(asked).toEqual(['Live'])
+    expect(asked).toEqual(['Live', 'Done', 'Old'])
     expect(result).toEqual([
       { title: 'Live', status: 'in-progress', stats: { languages: [], activity: null } },
-      { title: 'Done', status: 'complete', stats: null },
-      { title: 'Old', status: 'archived', stats: null },
+      { title: 'Done', status: 'complete', stats: { languages: [], activity: null } },
+      { title: 'Old', status: 'archived', stats: { languages: [], activity: null } },
     ])
   })
 
