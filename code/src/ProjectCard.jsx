@@ -12,7 +12,7 @@ function ProjectCard({ project, titleTo, headingLevel, children }) {
         {titleTo ? <Link to={titleTo}>{project.title}</Link> : project.title}
       </Heading>
       <div className="sticky-note-date">{projectDateLine(project)}</div>
-      <div className="sticky-note-status">{statusLabel(project.status)}</div>
+      {project.status !== 'complete' && <div className="sticky-note-status">{statusLabel(project.status)}</div>}
       <p className="sticky-note-description">{project.description}</p>
       <ProjectStats stats={project.stats} />
       {children}

@@ -18,7 +18,7 @@ function DevlogEntry() {
       <Link to={timelinePath(project.slug)} className="devlog-back">← {project.title} devlog</Link>
       <h1 className="post-title devlog-entry-page-title">{entry.title}</h1>
       <p className="devlog-entry-meta">
-        <span className="devlog-tag" style={{ '--tag-color': project.color }}>{project.title}</span>
+        <span className="devlog-tag">{project.title}</span>
         <time className="devlog-entry-date" dateTime={entry.date}>{formatDate(entry.date)}</time>
       </p>
       <DevlogBody entry={entry} />
