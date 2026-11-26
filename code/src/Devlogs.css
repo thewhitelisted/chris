@@ -109,6 +109,7 @@
 
 /* A project in sticky-note colours, fixed in the page (timeline header, /now). */
 .project-card {
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   gap: 10px;
