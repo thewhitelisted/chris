@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { loadPosts } from './posts.js'
-import { fetchOwnerRepos, selectPortfolioProjects } from './github.js'
+import { loadDevlogs, devlogIndex } from './devlogs.js'
+import { fetchOwnerRepos, selectPortfolioProjects, addRepoStats, fetchRepoStats } from './github.js'
 import { validateHandKept, mergeProjects, allowNoGitHubProjects } from './projects.js'
 import { renderRss, headTags, withHead, pageFiles } from './feeds.js'
 import { SITE_URL, GITHUB_USER, PORTFOLIO_TOPIC } from './site.js'
@@ -10,24 +11,31 @@ import { handKeptProjects } from '../src/projectsData.js'
 
 const POSTS_ID = 'virtual:posts'
 const PROJECTS_ID = 'virtual:projects'
+const DEVLOGS_ID = 'virtual:devlogs'
 const resolved = (id) => `\0${id}`
 const POST_URL = /^\/posts\/([^?#]*)/
+const DEVLOG_URL = /^\/devlogs\/([^?#]*)/
 
-export async function loadContent({ root, postsDir, env }) {
+export async function loadContent({ root, postsDir, devlogsDir, env, warn }) {
   const posts = await loadPosts(postsDir)
   const privateToken = env.PORTFOLIO_REPOS_TOKEN
+  const token = privateToken || env.GITHUB_TOKEN
   const repos = await fetchOwnerRepos({
     user: GITHUB_USER,
-    token: privateToken || env.GITHUB_TOKEN,
+    token,
     includePrivate: Boolean(privateToken),
     apiUrl: env.GITHUB_API_URL,
   })
+  const fromGitHub = await addRepoStats(selectPortfolioProjects(repos, PORTFOLIO_TOPIC), (repo) =>
+    fetchRepoStats({ user: GITHUB_USER, repo, token, privateToken: Boolean(privateToken), apiUrl: env.GITHUB_API_URL, warn }),
+  )
   const projects = mergeProjects(
-    selectPortfolioProjects(repos, PORTFOLIO_TOPIC),
+    fromGitHub,
     validateHandKept(handKeptProjects, path.join(root, 'public')),
     { allowNoGitHubProjects: allowNoGitHubProjects(env) },
   )
-  return { posts, projects }
+  const devlogs = await loadDevlogs(devlogsDir, projects.map((project) => project.slug))
+  return { posts, projects, devlogs }
 }
 
 export function postResponse(url, posts, postsError) {
@@ -36,6 +44,22 @@ export function postResponse(url, posts, postsError) {
   if (postsError) return { status: 500, body: postsError.message }
   const post = posts.find((p) => `${p.slug}.md` === match[1])
   return post ? { status: 200, body: post.body } : { status: 404, body: 'not found' }
+}
+
+export function devlogResponse(url, devlogs, devlogsError) {
+  const match = DEVLOG_URL.exec(url)
+  if (!match) return null
+  if (devlogsError) return { status: 500, body: devlogsError.message }
+  const entry = devlogs.find((e) => `${e.project}/${e.date}.md` === match[1])
+  return entry ? { status: 200, body: entry.body } : { status: 404, body: 'not found' }
+}
+
+export function watchDevlogs(watcher, devlogsDir, onDevlogsChanged) {
+  const onEvent = (file) => {
+    if (file === devlogsDir || file.startsWith(devlogsDir + path.sep)) onDevlogsChanged()
+  }
+  watcher.add(devlogsDir)
+  for (const event of ['add', 'change', 'unlink', 'addDir', 'unlinkDir']) watcher.on(event, onEvent)
 }
 
 export function watchPosts(watcher, postsDir, onPostsChanged) {
@@ -50,14 +74,15 @@ export function watchPosts(watcher, postsDir, onPostsChanged) {
   watcher.on('unlinkDir', onFileEvent)
 }
 
-export function hotMessage(postsError) {
-  return postsError ? { type: 'error', err: { message: postsError.message, stack: '' } } : { type: 'full-reload' }
+export function hotMessage(contentError) {
+  return contentError ? { type: 'error', err: { message: contentError.message, stack: '' } } : { type: 'full-reload' }
 }
 
-export default function contentPlugin({ postsDir }) {
+export default function contentPlugin({ postsDir, devlogsDir }) {
   let root
   let content
   let postsError = null
+  let devlogsError = null
   let markLoaded
   const loaded = new Promise((resolve) => {
     markLoaded = resolve
@@ -69,11 +94,11 @@ export default function contentPlugin({ postsDir }) {
       root = config.root
     },
     async buildStart() {
-      content = await loadContent({ root, postsDir, env: process.env })
+      content = await loadContent({ root, postsDir, devlogsDir, env: process.env, warn: (message) => this.warn(message) })
       markLoaded()
     },
     resolveId(id) {
-      if (id === POSTS_ID || id === PROJECTS_ID) return resolved(id)
+      if (id === POSTS_ID || id === PROJECTS_ID || id === DEVLOGS_ID) return resolved(id)
     },
     load(id) {
       if (id === resolved(POSTS_ID)) {
@@ -82,30 +107,54 @@ export default function contentPlugin({ postsDir }) {
         return `export const blogPosts = ${JSON.stringify(index)}`
       }
       if (id === resolved(PROJECTS_ID)) return `export const projects = ${JSON.stringify(content.projects)}`
+      if (id === resolved(DEVLOGS_ID)) {
+        if (devlogsError) throw devlogsError
+        return `export const devlogs = ${JSON.stringify(devlogIndex(content.devlogs))}`
+      }
     },
     configureServer(server) {
       let reloading = loaded
+
+      const reported = (err) => {
+        server.config.logger.error(`[site-content] ${err.message}`, { timestamp: true })
+        return err
+      }
+      const reloaded = (id) => {
+        const graph = server.environments.client.moduleGraph
+        const mod = graph.getModuleById(resolved(id))
+        if (mod) graph.invalidateModule(mod)
+        server.ws.send(hotMessage(postsError ?? devlogsError))
+      }
 
       const reloadPosts = async () => {
         try {
           content.posts = await loadPosts(postsDir)
           postsError = null
         } catch (err) {
-          postsError = err
-          server.config.logger.error(`[site-content] ${err.message}`, { timestamp: true })
+          postsError = reported(err)
         }
-        const graph = server.environments.client.moduleGraph
-        const mod = graph.getModuleById(resolved(POSTS_ID))
-        if (mod) graph.invalidateModule(mod)
-        server.ws.send(hotMessage(postsError))
+        reloaded(POSTS_ID)
+      }
+
+      const reloadDevlogs = async () => {
+        try {
+          content.devlogs = await loadDevlogs(devlogsDir, content.projects.map((project) => project.slug))
+          devlogsError = null
+        } catch (err) {
+          devlogsError = reported(err)
+        }
+        reloaded(DEVLOGS_ID)
       }
 
       watchPosts(server.watcher, postsDir, () => {
         reloading = reloading.then(reloadPosts)
       })
+      watchDevlogs(server.watcher, devlogsDir, () => {
+        reloading = reloading.then(reloadDevlogs)
+      })
 
       server.middlewares.use((req, res, next) => {
-        const response = postResponse(req.url, content.posts, postsError)
+        const response = postResponse(req.url, content.posts, postsError) ?? devlogResponse(req.url, content.devlogs, devlogsError)
         if (!response) return next()
         res.statusCode = response.status
         res.setHeader('Content-Type', `${response.status === 200 ? 'text/markdown' : 'text/plain'}; charset=utf-8`)
@@ -125,12 +174,20 @@ export default function contentPlugin({ postsDir }) {
         }
 
         for (const post of content.posts) emit(`posts/${post.slug}.md`, post.body)
-        emit('rss.xml', renderRss({ siteUrl: SITE_URL, title: SITE_NAME, description: SITE_DESCRIPTION, posts: content.posts }))
+        for (const entry of content.devlogs) emit(`devlogs/${entry.project}/${entry.date}.md`, entry.body)
+        emit('rss.xml', renderRss({
+          siteUrl: SITE_URL,
+          title: SITE_NAME,
+          description: SITE_DESCRIPTION,
+          posts: content.posts,
+          devlogs: content.devlogs,
+          projects: content.projects,
+        }))
 
         const template = bundle['index.html']
         if (!template || template.type !== 'asset') throw new Error('site-content: index.html missing from the bundle')
         const html = String(template.source)
-        for (const page of sitePages(content.posts)) {
+        for (const page of sitePages({ posts: content.posts, projects: content.projects, devlogs: content.devlogs })) {
           const pageHtml = withHead(html, headTags({ siteUrl: SITE_URL, siteName: SITE_NAME, ...page }))
           for (const fileName of pageFiles(page.path)) {
             if (fileName === 'index.html') template.source = pageHtml

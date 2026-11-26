@@ -11,6 +11,7 @@ export const projects = [
     private: false,
     github: 'https://github.com/thewhitelisted/shipped',
     color: '#3b82f6',
+    stats: null,
   },
   {
     slug: 'stealth-alpha',
@@ -24,6 +25,10 @@ export const projects = [
     private: true,
     live: 'https://stealth.example',
     color: '#10b981',
+    stats: {
+      languages: [{ name: 'Python', percent: 91.4 }, { name: 'Shell', percent: 8.6 }],
+      activity: { weekly: [...Array(48).fill(0), 3, 0, 12, 5], last30Days: 17 },
+    },
   },
   {
     slug: 'shelved',
@@ -37,6 +42,7 @@ export const projects = [
     private: false,
     github: 'https://github.com/thewhitelisted/shelved',
     color: '#8b5cf6',
+    stats: null,
   },
   {
     slug: 'notes',
@@ -49,5 +55,6 @@ export const projects = [
     private: false,
     report: '/FIV.pdf',
     color: '#ef4444',
+    stats: null,
   },
 ]

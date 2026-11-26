@@ -4,6 +4,8 @@ import { Home, User, FolderOpen, BookOpen, FileText, Music, Lightbulb, Menu, X }
 import Loading from './Loading.jsx'
 import RouteErrorBoundary from './RouteErrorBoundary.jsx'
 import { blogPosts } from 'virtual:posts'
+import { projects } from 'virtual:projects'
+import { devlogs } from 'virtual:devlogs'
 import { titleFor } from './site.js'
 
 function Layout() {
@@ -25,7 +27,7 @@ function Layout() {
   ]
 
   useEffect(() => {
-    document.title = titleFor(location.pathname, blogPosts)
+    document.title = titleFor(location.pathname, { posts: blogPosts, projects, devlogs })
   }, [location.pathname])
 
   useEffect(() => {
