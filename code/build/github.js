@@ -216,12 +216,13 @@ export function commitActivity(weeks, repo, nowMs) {
     if (i > 0 && firstDay(w) - firstDay(weeks[i - 1]) !== 7) fail(`${label} does not follow the previous week`)
   })
 
+  const newest = weeks.at(-1)
+  if (newest.week * 1000 > nowMs) fail(`has a week starting after the build time ${new Date(nowMs).toISOString()}`)
   const today = Math.floor(nowMs / 1000 / DAY_SECONDS)
-  const thisWeekStart = today - ((today + EPOCH_WEEKDAY) % 7)
-  if (firstDay(weeks.at(-1)) > thisWeekStart) fail(`has a week after the build date ${new Date(nowMs).toISOString()}`)
+  const lastWeekStart = Math.max(today - ((today + EPOCH_WEEKDAY) % 7), firstDay(newest))
 
   const totals = new Map(weeks.map((w) => [firstDay(w), w.total]))
-  const weekly = Array.from({ length: WEEKS }, (_, i) => totals.get(thisWeekStart - (WEEKS - 1 - i) * 7) ?? 0)
+  const weekly = Array.from({ length: WEEKS }, (_, i) => totals.get(lastWeekStart - (WEEKS - 1 - i) * 7) ?? 0)
   let last30Days = 0
   for (const w of weeks) {
     w.days.forEach((count, d) => {

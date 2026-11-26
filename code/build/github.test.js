@@ -413,8 +413,9 @@ describe('fetchOwnerRepos', () => {
 // - languages: the recorded response, {}, one language, zero-byte languages, equal byte counts, many random maps;
 //   malformed: null, array, string, negative / fractional / string / unsafe byte counts, blank or control-character names
 // - commit activity: the recorded response; 51 or 53 weeks; a week not on Sunday 00:00 UTC; 6 days; days not adding
-//   up to the total; negative counts; a gap between weeks; a week after the build date; data that ends weeks before
-//   the build date (GitHub caches stats until the next push)
+//   up to the total; negative counts; a gap between weeks; a week starting after the build time; a newest week that
+//   GitHub starts at 23:00 UTC Saturday, built in that last hour of Saturday; data that ends weeks before the build
+//   date (GitHub caches stats until the next push)
 // - last30Days boundary, all in UTC: today, 29 days ago (in), 30 days ago (out), later today in this week (out of the
 //   future), build time at 00:00:00.000 and 23:59:59.999, build day Sunday and Saturday; randomised against a
 //   reference built from Date arithmetic
@@ -563,6 +564,21 @@ describe('commitActivity', () => {
     }
   })
 
+  describe('a newest week that GitHub starts at 23:00 UTC on Saturday', () => {
+    const early = () => weeksEnding('2026-11-29', (day) => (day === '2026-11-29' ? 4 : day === '2026-11-28' ? 1 : 0))
+      .map((w) => ({ ...w, week: w.week - 3600 }))
+
+    it('ends the weekly counts with that week when built in the last hour of Saturday', () => {
+      const activity = commitActivity(early(), 'r', at('2026-11-28T23:30:00Z'))
+      expect(activity.weekly.slice(-2)).toEqual([1, 4])
+      expect(activity.last30Days).toBe(1)
+    })
+
+    it('still fails when built before that week starts', () => {
+      expect(() => commitActivity(early(), 'r', at('2026-11-28T22:59:59.999Z'))).toThrow(/has a week starting after the build time/)
+    })
+  })
+
   it('returns all zeros when the data is more than a year old', () => {
     expect(commitActivity(weeksEnding('2024-01-07', () => 3), 'r', at('2026-11-26T12:00:00Z'))).toEqual({ weekly: Array(52).fill(0), last30Days: 0 })
   })
@@ -591,7 +607,7 @@ describe('commitActivity', () => {
     ['a negative count', () => good().map((w, i) => (i === 5 ? { ...w, days: [-1, 1, 1, 1, 1, 1, 1], total: 5 } : w)), /should have a total and 7 daily counts/],
     ['days not adding up', () => good().map((w, i) => (i === 5 ? { ...w, total: 8 } : w)), /week 5 .* daily counts that do not add up/],
     ['a gap', () => good().map((w, i) => (i === 10 ? { ...w, week: w.week + 7 * 86400 } : w)), /week 10 .* does not follow the previous week|week 11/],
-    ['a week after the build date', () => weeksEnding('2026-11-29'), /has a week after the build date 2026-11-26T12:00:00.000Z/],
+    ['a week after the build date', () => weeksEnding('2026-11-29'), /has a week starting after the build time 2026-11-26T12:00:00.000Z/],
   ])('fails on %s, naming the repo', (_name, make, message) => {
     const error = (() => {
       try {
