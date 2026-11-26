@@ -9,8 +9,23 @@ import { mount } from './testUtils.js'
 
 let view
 let noteSize
+let observers
+
+// Records what the note observes, so a test can report a size change the way the browser would.
+class FakeResizeObserver {
+  constructor(callback) {
+    this.callback = callback
+    this.observed = []
+    this.disconnected = false
+    observers.push(this)
+  }
+  observe(element) { this.observed.push(element) }
+  disconnect() { this.disconnected = true }
+}
 
 beforeEach(() => {
+  observers = []
+  vi.stubGlobal('ResizeObserver', FakeResizeObserver)
   view = mount()
   noteSize = { width: 300, height: 438 }
   const sizeOf = (axis) => function () { return this.classList.contains('sticky-note') ? noteSize[axis] : 0 }
@@ -22,6 +37,7 @@ beforeEach(() => {
 afterEach(() => {
   view.unmount()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 const stealth = projects.find((p) => p.slug === 'stealth-alpha')
@@ -75,5 +91,28 @@ describe('StickyNote placement', () => {
     await mouse('mousemove', document, 50, 5000)
     await mouse('mouseup', document, 50, 5000)
     expect(box().y).toBe(720 - 438 - 8)
+  })
+
+  it('refits when the note itself grows, as reported by its ResizeObserver', async () => {
+    await open({ x: 40, y: 250 })
+    expect(box().y).toBe(250)
+    const [observer] = observers
+    expect(observer.observed).toEqual([note()])
+    noteSize = { width: 300, height: 600 }
+    await act(async () => observer.callback([]))
+    expect(box()).toEqual({ x: 40, y: 720 - 600 - 8 })
+  })
+
+  it('stops observing and listening when it closes', async () => {
+    const added = vi.spyOn(window, 'addEventListener')
+    const removed = vi.spyOn(window, 'removeEventListener')
+    await open({ x: 40, y: 100 })
+    const [, onResize] = added.mock.calls.find(([type]) => type === 'resize')
+    const [observer] = observers
+    expect(observer.disconnected).toBe(false)
+    view.unmount()
+    view = mount()
+    expect(observer.disconnected).toBe(true)
+    expect(removed.mock.calls.some(([type, fn]) => type === 'resize' && fn === onResize)).toBe(true)
   })
 })

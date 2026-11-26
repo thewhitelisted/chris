@@ -245,7 +245,9 @@
 .sticky-note {
   width: 300px;
   min-height: min(380px, calc(100vh - 16px));
+  min-height: min(380px, calc(100dvh - 16px));
   max-height: min(600px, calc(100vh - 16px));
+  max-height: min(600px, calc(100dvh - 16px));
   display: flex;
   flex-direction: column;
   border-radius: 8px;
