@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
@@ -7,12 +7,36 @@ import { projectDateLine, statusLabel } from './projectStatus.js'
 import { plural, timelinePath } from './devlogs.js'
 import ProjectLinks from './ProjectLinks.jsx'
 import ProjectStats from './ProjectStats.jsx'
+import { clampNotePosition } from './notePosition.js'
+
+// offsetWidth/offsetHeight ignore the open animation's scale transform.
+const fitInViewport = (element, position) => clampNotePosition(
+  position,
+  { width: element.offsetWidth, height: element.offsetHeight },
+  { width: window.innerWidth, height: window.innerHeight },
+)
 
 function StickyNote({ project, entries, onClose, initialPosition, zIndex, onBringToFront }) {
   const [position, setPosition] = useState(initialPosition)
   const [isDragging, setIsDragging] = useState(false)
   const dragRef = useRef(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+
+  useLayoutEffect(() => {
+    const element = dragRef.current
+    const refit = () => setPosition((current) => {
+      const fitted = fitInViewport(element, current)
+      return fitted.x === current.x && fitted.y === current.y ? current : fitted
+    })
+    refit()
+    const observer = new ResizeObserver(refit)
+    observer.observe(element)
+    window.addEventListener('resize', refit)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', refit)
+    }
+  }, [])
 
   const handleMouseDown = (e) => {
     if (e.target.closest('.sticky-note-close') || e.target.closest('.sticky-note-link') || e.target.closest('.sticky-note-devlog')) {
@@ -33,16 +57,7 @@ function StickyNote({ project, entries, onClose, initialPosition, zIndex, onBrin
     const handleMouseMove = (e) => {
       if (!isDragging) return
       
-      const newX = e.clientX - dragOffset.x
-      const newY = e.clientY - dragOffset.y
-      
-      const maxX = window.innerWidth - 320
-      const maxY = window.innerHeight - 400
-      
-      setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY))
-      })
+      setPosition(fitInViewport(dragRef.current, { x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y }))
     }
 
     const handleMouseUp = () => {
