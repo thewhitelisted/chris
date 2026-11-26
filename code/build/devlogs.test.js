@@ -6,13 +6,24 @@
 // - ordering: different dates, same date in two projects
 // - unknown-slug mode: fail (token set, listing complete) or skip (no token); in skip mode every other check still
 //   fails, inside skipped folders too (nested folder, bad name, date mismatch, frontmatter), and stray files still fail
+// - reserved slug: a project whose slug is "index" with entries (fails), "index" unknown in skip mode (skipped)
+// - dot-named entries at the top level: a dot folder (ignored, reported, contents unread), a dotfile (ignored silently)
+// - unreadable paths (EACCES): devlogs/ itself, a project folder, an entry file; skipped when running as root
 // - duplicates: same project and date (only reachable through checkUniqueDates; the file system keeps names unique)
 // Frontmatter rules themselves are shared with posts and covered in posts.test.js.
-import { describe, it, expect } from 'vitest'
-import { mkdtemp, writeFile, mkdir } from 'node:fs/promises'
+import { describe, it, expect, afterEach } from 'vitest'
+import { mkdtemp, writeFile, mkdir, chmod } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { parseDevlogEntry, checkUniqueDates, sortDevlogsNewestFirst, loadDevlogs, devlogIndex, skippedDevlogsWarning } from './devlogs.js'
+import {
+  parseDevlogEntry,
+  checkUniqueDates,
+  sortDevlogsNewestFirst,
+  loadDevlogs,
+  devlogIndex,
+  skippedDevlogsWarning,
+  ignoredDotFoldersWarning,
+} from './devlogs.js'
 import { ContentError } from './frontmatter.js'
 
 const entry = (date, title = 't', body = '# Body\n') => `---\ntitle: ${title}\ndate: ${date}\ndescription: d\n---\n\n${body}`
@@ -98,8 +109,9 @@ describe('sortDevlogsNewestFirst', () => {
 describe('loadDevlogs', () => {
   const slugs = ['pathos', 'crowdbook', 'financial-viscosity-indicator']
   const strict = async (dir) => {
-    const { entries, skipped } = await loadDevlogs(dir, slugs, { skipUnknownProjects: false })
+    const { entries, skipped, ignoredDotFolders } = await loadDevlogs(dir, slugs, { skipUnknownProjects: false })
     expect(skipped).toEqual([])
+    expect(ignoredDotFolders).toEqual([])
     return entries
   }
 
@@ -186,7 +198,7 @@ describe('loadDevlogs skipping unknown projects (no PORTFOLIO_REPOS_TOKEN)', () 
   })
 
   it('skips an empty unknown folder too', async () => {
-    expect(await skipping(await devlogsDir({ ghost: {} }))).toEqual({ entries: [], skipped: ['ghost'] })
+    expect(await skipping(await devlogsDir({ ghost: {} }))).toEqual({ entries: [], skipped: ['ghost'], ignoredDotFolders: [] })
   })
 
   it('returns nothing skipped when every folder is known', async () => {
@@ -209,7 +221,7 @@ describe('loadDevlogs skipping unknown projects (no PORTFOLIO_REPOS_TOKEN)', () 
   })
 
   it('returns nothing for a missing folder', async () => {
-    expect(await skipping(path.join(await devlogsDir({}), 'devlogs'))).toEqual({ entries: [], skipped: [] })
+    expect(await skipping(path.join(await devlogsDir({}), 'devlogs'))).toEqual({ entries: [], skipped: [], ignoredDotFolders: [] })
   })
 })
 
@@ -219,5 +231,68 @@ describe('skippedDevlogsWarning', () => {
       'devlogs: skipped devlogs/a, devlogs/b: no listed project has that slug. ' +
         'PORTFOLIO_REPOS_TOKEN is not set, so private repos are not listed; set it to build their devlogs',
     )
+  })
+})
+
+describe('loadDevlogs edge cases', () => {
+  const load = (dir, slugs, skipUnknownProjects = false) => loadDevlogs(dir, slugs, { skipUnknownProjects })
+
+  it('reports dot-named folders it ignores, without reading them, and stays silent about dotfiles', async () => {
+    const dir = await devlogsDir({
+      '.github': { 'workflow.yml': 'not an entry' },
+      '.drafts': { nested: {} },
+      '.DS_Store': 'junk',
+      pathos: { '2026-11-20.md': entry('2026-11-20') },
+    })
+    const result = await load(dir, ['pathos'])
+    expect(result.entries.map((e) => e.project)).toEqual(['pathos'])
+    expect(result.ignoredDotFolders.slice().sort()).toEqual(['.drafts', '.github'])
+  })
+
+  it('words the dot-folder warning with each folder', () => {
+    expect(ignoredDotFoldersWarning(['.github'])).toBe('devlogs: ignored devlogs/.github: folders whose names start with a dot are not read')
+  })
+
+  it('fails on devlogs for a project whose slug is "index", naming the clash', async () => {
+    const dir = await devlogsDir({ index: { '2026-11-20.md': entry('2026-11-20') } })
+    await expect(load(dir, ['index', 'pathos'])).rejects.toThrow(
+      `${path.join(dir, 'index')}: a project with the slug "index" cannot have devlogs: its page /projects/index would replace the projects page`,
+    )
+  })
+
+  it('skips an unknown "index" folder in skip mode and calls it not a slug otherwise', async () => {
+    const dir = await devlogsDir({ index: { '2026-11-20.md': entry('2026-11-20') } })
+    expect((await load(dir, ['pathos'], true)).skipped).toEqual(['index'])
+    await expect(load(dir, ['pathos'])).rejects.toThrow(/"index" is not a project slug/)
+  })
+
+  describe('unreadable paths', () => {
+    const asRoot = process.getuid?.() === 0
+    const locked = []
+    const lock = async (target) => {
+      await chmod(target, 0o000)
+      locked.push(target)
+    }
+    afterEach(async () => {
+      for (const target of locked.splice(0)) await chmod(target, 0o755)
+    })
+
+    it.skipIf(asRoot)('rethrows a permission error reading devlogs/ instead of treating it as empty', async () => {
+      const dir = await devlogsDir({ pathos: { '2026-11-20.md': entry('2026-11-20') } })
+      await lock(dir)
+      await expect(load(dir, ['pathos'])).rejects.toMatchObject({ code: 'EACCES' })
+    })
+
+    it.skipIf(asRoot)('fails on a project folder it cannot read', async () => {
+      const dir = await devlogsDir({ pathos: { '2026-11-20.md': entry('2026-11-20') } })
+      await lock(path.join(dir, 'pathos'))
+      await expect(load(dir, ['pathos'])).rejects.toMatchObject({ code: 'EACCES' })
+    })
+
+    it.skipIf(asRoot)('fails on an entry file it cannot read instead of leaving it out', async () => {
+      const dir = await devlogsDir({ pathos: { '2026-11-20.md': entry('2026-11-20'), '2026-11-21.md': entry('2026-11-21') } })
+      await lock(path.join(dir, 'pathos', '2026-11-21.md'))
+      await expect(load(dir, ['pathos'])).rejects.toMatchObject({ code: 'EACCES' })
+    })
   })
 })

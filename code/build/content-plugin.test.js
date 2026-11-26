@@ -86,7 +86,10 @@ async function scratchProject({ posts = {}, devlogs = null, publicFiles = {}, sc
     `import contentPlugin from ${JSON.stringify(pluginModule)}\n` +
       `export default { plugins: [contentPlugin({ postsDir: ${JSON.stringify(postsDir)}, devlogsDir: ${JSON.stringify(devlogsDir)} })] }\n`,
   )
-  for (const [name, text] of Object.entries({ 'FIV.pdf': '%PDF', ...publicFiles })) await writeFile(path.join(site, 'public', name), text)
+  for (const [name, text] of Object.entries({ 'FIV.pdf': '%PDF', ...publicFiles })) {
+    await mkdir(path.dirname(path.join(site, 'public', name)), { recursive: true })
+    await writeFile(path.join(site, 'public', name), text)
+  }
   for (const [name, text] of Object.entries(posts)) await writeFile(path.join(postsDir, name), text)
   if (devlogs) {
     for (const [project, files] of Object.entries(devlogs)) {
@@ -461,6 +464,40 @@ describe('vite build failure paths', () => {
     const { code, output } = await build({}, project)
     expect(code).not.toBe(0)
     expect(output).toMatch(/two outputs would be written to rss\.xml/)
+  }, 60000)
+
+  it.each([
+    ['the project page', 'projects/financial-viscosity-indicator.html'],
+    ['the entry page', 'projects/financial-viscosity-indicator/2026-11-20/index.html'],
+    ['the entry body', 'devlogs/financial-viscosity-indicator/2026-11-20.md'],
+    ['the /now page', 'now.html'],
+  ])('fails when %s of a devlog would overwrite a file in public/', async (_name, file) => {
+    serveJson(recordedTagged)
+    const project = await scratchProject({
+      devlogs: { 'financial-viscosity-indicator': { '2026-11-20.md': entry('2026-11-20', 'x') } },
+      publicFiles: { [file]: 'already here' },
+    })
+    const { code, output } = await build({}, project)
+    expect(code).not.toBe(0)
+    expect(output).toContain(`site-content: two outputs would be written to ${file}`)
+  }, 60000)
+
+  it('fails with a clear message on devlogs for a repo named "index"', async () => {
+    const indexRepo = { ...recordedTagged.find((r) => r.name === 'crowdbook'), name: 'index', html_url: 'https://github.com/thewhitelisted/index' }
+    serveJson([...recordedTagged, indexRepo])
+    const project = await scratchProject({ devlogs: { index: { '2026-11-20.md': entry('2026-11-20', 'x') } } })
+    const { code, output } = await build({}, project)
+    expect(code).not.toBe(0)
+    expect(output).toMatch(/devlogs\/index: a project with the slug "index" cannot have devlogs: its page \/projects\/index would replace the projects page/)
+  }, 60000)
+
+  it('warns about a dot-named folder in devlogs/ and builds without it', async () => {
+    serveJson(recordedTagged)
+    const project = await scratchProject({ devlogs: { '.github': { 'x.yml': 'y' }, pathos: { '2026-11-20.md': entry('2026-11-20', 'x') } } })
+    const site = await build({}, project, 'warn')
+    expect(site.code).toBe(0)
+    expect(site.output).toContain('devlogs: ignored devlogs/.github: folders whose names start with a dot are not read')
+    expect(await site.read('devlogs/pathos/2026-11-20.md')).toBe('# body\n')
   }, 60000)
 
   it('fails on a reserved post slug that would replace the blog listing page', async () => {

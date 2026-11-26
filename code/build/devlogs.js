@@ -3,6 +3,7 @@ import path from 'node:path'
 import { ContentError, parseFrontmatter } from './frontmatter.js'
 
 const ENTRY_NAME = /^(\d{4}-\d{2}-\d{2})\.md$/
+const RESERVED_PROJECT_SLUGS = ['index']
 
 export function parseDevlogEntry(file, source) {
   const match = ENTRY_NAME.exec(path.basename(file))
@@ -28,27 +29,33 @@ export function sortDevlogsNewestFirst(entries) {
   return entries.slice().sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.project.localeCompare(b.project)))
 }
 
+const isDotted = (entry) => entry.name.startsWith('.')
+
 async function listFolder(dir) {
-  return (await readdir(dir, { withFileTypes: true })).filter((entry) => !entry.name.startsWith('.'))
+  return (await readdir(dir, { withFileTypes: true })).filter((entry) => !isDotted(entry))
 }
 
 export async function loadDevlogs(dir, projectSlugs, { skipUnknownProjects }) {
-  let projectFolders
+  let topLevel
   try {
-    projectFolders = await listFolder(dir)
+    topLevel = await readdir(dir, { withFileTypes: true })
   } catch (err) {
-    if (err.code === 'ENOENT') return { entries: [], skipped: [] }
+    if (err.code === 'ENOENT') return { entries: [], skipped: [], ignoredDotFolders: [] }
     if (err.code === 'ENOTDIR') throw new ContentError(dir, 'must be a folder of project folders')
     throw err
   }
+  const ignoredDotFolders = topLevel.filter((entry) => isDotted(entry) && entry.isDirectory()).map((entry) => entry.name)
   const entries = []
   const skipped = []
-  for (const folder of projectFolders) {
+  for (const folder of topLevel.filter((entry) => !isDotted(entry))) {
     const folderPath = path.join(dir, folder.name)
     if (!folder.isDirectory()) throw new ContentError(folderPath, 'only project folders belong in the devlogs folder')
     const known = projectSlugs.includes(folder.name)
     if (!known && !skipUnknownProjects) {
       throw new ContentError(folderPath, `"${folder.name}" is not a project slug; use one of: ${projectSlugs.join(', ')}`)
+    }
+    if (known && RESERVED_PROJECT_SLUGS.includes(folder.name)) {
+      throw new ContentError(folderPath, `a project with the slug "${folder.name}" cannot have devlogs: its page /projects/${folder.name} would replace the projects page`)
     }
     const folderEntries = []
     for (const item of await listFolder(folderPath)) {
@@ -60,7 +67,11 @@ export async function loadDevlogs(dir, projectSlugs, { skipUnknownProjects }) {
     if (known) entries.push(...folderEntries)
     else skipped.push(folder.name)
   }
-  return { entries: sortDevlogsNewestFirst(entries), skipped }
+  return { entries: sortDevlogsNewestFirst(entries), skipped, ignoredDotFolders }
+}
+
+export function ignoredDotFoldersWarning(names) {
+  return `devlogs: ignored ${names.map((name) => `devlogs/${name}`).join(', ')}: folders whose names start with a dot are not read`
 }
 
 export function skippedDevlogsWarning(skipped) {

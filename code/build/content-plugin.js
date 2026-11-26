@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { loadPosts } from './posts.js'
-import { loadDevlogs, devlogIndex, skippedDevlogsWarning } from './devlogs.js'
+import { loadDevlogs, devlogIndex, skippedDevlogsWarning, ignoredDotFoldersWarning } from './devlogs.js'
 import { fetchOwnerRepos, selectPortfolioProjects, addRepoStats, fetchRepoStats } from './github.js'
 import { validateHandKept, mergeProjects, allowNoGitHubProjects } from './projects.js'
 import { renderRss, headTags, withHead, pageFiles } from './feeds.js'
@@ -40,9 +40,10 @@ export async function loadContent({ root, postsDir, devlogsDir, env, warn }) {
 }
 
 export async function loadProjectDevlogs({ devlogsDir, projects, skipUnknownDevlogs, warn }) {
-  const { entries, skipped } = await loadDevlogs(devlogsDir, projects.map((project) => project.slug), {
+  const { entries, skipped, ignoredDotFolders } = await loadDevlogs(devlogsDir, projects.map((project) => project.slug), {
     skipUnknownProjects: skipUnknownDevlogs,
   })
+  if (ignoredDotFolders.length) warn(ignoredDotFoldersWarning(ignoredDotFolders))
   if (skipped.length) warn(skippedDevlogsWarning(skipped))
   return entries
 }
