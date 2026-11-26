@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, FolderOpen } from 'lucide-react'
+import { Search, FolderOpen, Lock } from 'lucide-react'
 import { projects } from 'virtual:projects'
 import { formatDate } from './dates.js'
-import { useListing } from './listing.js'
+import { useListing, PROJECTS_INITIAL_SORT } from './listing.js'
+import { statusLabel } from './projectStatus.js'
 import SortHeader from './SortHeader.jsx'
 import StickyNote from './StickyNote.jsx'
 
@@ -11,12 +12,19 @@ const COLUMNS = [
   { key: 'name', label: 'Name' },
   { key: 'date', label: 'Date Created' },
   { key: 'type', label: 'Type' },
+  { key: 'status', label: 'Status' },
 ]
 
-const searchableText = (project) => [project.title, project.description, ...project.technologies]
+const searchableText = (project) => [
+  project.title,
+  project.description,
+  ...project.technologies,
+  statusLabel(project.status),
+  ...(project.private ? ['Private'] : []),
+]
 
 function Projects() {
-  const { query, setQuery, sort, toggleSort, visible } = useListing(projects, searchableText)
+  const { query, setQuery, sort, toggleSort, visible } = useListing(projects, searchableText, PROJECTS_INITIAL_SORT)
   const [openNotes, setOpenNotes] = useState([])
   const [nextZIndex, setNextZIndex] = useState(1000)
 
@@ -84,12 +92,16 @@ function Projects() {
                   <div className="col name">
                     <FolderOpen className="file-icon" size={16} style={{ color: project.color }} />
                     <span className="file-name">{project.title}</span>
+                    {project.private && <Lock className="private-icon" size={12} aria-label="Private repository" />}
                   </div>
                   <div className="col date">{formatDate(project.date)}</div>
                   <div className="col type">
                     <span className="type-badge">
                       {project.type}
                     </span>
+                  </div>
+                  <div className="col status">
+                    <span className={`status-badge status-${project.status}`}>{statusLabel(project.status)}</span>
                   </div>
                 </button>
               ))}

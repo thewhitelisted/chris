@@ -8,7 +8,12 @@ export default defineConfig(({ mode }) => ({
     ? [react()]
     : [react(), contentPlugin({ postsDir: fileURLToPath(new URL('../posts', import.meta.url)) })],
   resolve: mode === 'test'
-    ? { alias: { 'virtual:posts': fileURLToPath(new URL('./build/fixtures/virtual-posts.js', import.meta.url)) } }
+    ? {
+        alias: {
+          'virtual:posts': fileURLToPath(new URL('./build/fixtures/virtual-posts.js', import.meta.url)),
+          'virtual:projects': fileURLToPath(new URL('./build/fixtures/virtual-projects.js', import.meta.url)),
+        },
+      }
     : {},
   base: '/',
   test: {
